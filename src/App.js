@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  DollarSign, BarChart2, Briefcase, TrendingUp, Handshake, HeartHandshake, Home, Shield, Lightbulb, CheckCircle, Target, ArrowRightCircle
+  DollarSign, BarChart2, Briefcase, TrendingUp, Handshake, HeartHandshake, Home, Shield, Lightbulb, CheckCircle, Target, ArrowRightCircle, XCircle // Added XCircle
 } from 'lucide-react'; // Using lucide-react for icons
 
 // Utility function to format currency
@@ -10,6 +10,74 @@ const formatCurrency = (amount) => {
 
 // Helper to generate a unique ID (for list items)
 const generateId = () => Math.random().toString(36).substring(2, 9);
+
+// --- Define default savings methods outside the component to avoid re-creation issues with JSX ---
+const DEFAULT_SAVINGS_METHODS = [
+  { id: 'hysa', text: <>Open a <a href="https://shanitene.com/wealthfront" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">High-Yield Savings Account (HYSA)</a> for better interest.</>, checked: false },
+  { id: 'roundUpApp', text: 'Use a "round-up" app (e.g., Acorns, Chime) for spare change savings.', checked: false },
+  { id: 'rakuten', text: <>Use cash-back apps like <a href="https://shanitene.com/rakuten" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Rakuten</a> for online shopping savings.</>, checked: false },
+  { id: 'couponApps', text: 'Utilize coupon apps (e.g., Ibotta, Fetch Rewards) for grocery savings.', checked: false },
+  { id: 'gasApps', text: 'Find cheaper gas prices using apps (e.g., GasBuddy) to save on fuel.', checked: false },
+  { id: 'directDepositSplit', text: 'Split your direct deposit to automatically send a portion to savings/investments.', checked: false },
+  { id: 'payYourselfFirst', text: 'Automatically transfer a set amount to savings on payday (Pay Yourself First).', checked: false },
+  { id: 'mealPlanning', text: 'Plan meals weekly to reduce food waste and impulse grocery buys.', checked: false },
+  { id: 'cancelSubscriptions', text: 'Review and cancel unused subscriptions.', checked: false },
+  { id: 'publicTransport', text: 'Use public transportation or carpool to save on commuting costs.', checked: false },
+  { id: 'energyAudit', text: 'Conduct an energy audit at home to find ways to lower utility bills.', checked: false },
+  { id: 'negotiateBills', text: 'Negotiate lower rates for internet, cable, or insurance bills.', checked: false },
+  { id: 'diyInstead', text: 'Do small repairs or projects yourself instead of hiring help.', checked: false },
+  { id: 'coffeeAtHome', text: 'Make coffee at home instead of buying it daily.', checked: false },
+  { id: 'packedLunches', text: 'Pack lunches for work/school to avoid eating out.', checked: false },
+  { id: 'bulkBuying', text: 'Buy non-perishable items in bulk when on sale.', checked: false },
+  { id: 'libraryUse', text: 'Borrow books, movies, and games from the library instead of buying.', checked: false },
+  { id: 'sellUnusedItems', text: 'Sell unused clothing, electronics, or household items.', checked: false },
+  { id: 'priceCompare', text: 'Always compare prices online before making a significant purchase.', checked: false },
+  { id: 'repurposeItems', text: 'Find new uses for old items instead of buying new ones.', checked: false },
+  { id: 'waterBottle', text: 'Carry a reusable water bottle instead of buying bottled water.', checked: false },
+  { id: 'loyaltyPrograms', text: 'Join loyalty programs for stores you frequent.', checked: false },
+  { id: 'delayPurchases', text: 'Implement a 30-day rule for non-essential purchases.', checked: false },
+  { id: 'digitalCoupons', text: 'Use digital coupons and store loyalty apps for discounts.', checked: false },
+  { id: 'avoidATMFees', text: 'Avoid ATM fees by using your bank\'s network or getting cash back.', checked: false },
+  { id: 'lowerPhoneBill', text: 'Switch to a cheaper phone plan or negotiate current rates.', checked: false },
+  { id: 'homeCooking', text: 'Cook more at home instead of relying on takeout or restaurants.', checked: false },
+  { id: 'smartThermostat', text: 'Install a smart thermostat to optimize energy usage.', checked: false },
+  { id: 'gardening', text: 'Grow some of your own fruits and vegetables.', checked: false },
+  { id: 'usedItems', text: 'Buy quality used items (clothes, furniture) instead of new.', checked: false }
+];
+
+// --- Define default automation strategies outside the component ---
+const DEFAULT_AUTOMATION_STRATEGIES = [
+  { id: 'autoTransfer', text: 'Set up automatic transfers from checking to savings/investments.', checked: false },
+  { id: 'directDepositSplit', text: 'Split your direct deposit to send a portion directly to savings/investments.', checked: false },
+  { id: 'retirementAuto', text: 'Automate contributions to your 401k/403b (employer-sponsored retirement).', checked: false },
+  { id: 'iraAuto', text: 'Set up recurring automatic contributions to an Individual Retirement Account (IRA).', checked: false },
+  { id: 'hsaAuto', text: 'Automate contributions to a Health Savings Account (HSA).', checked: false },
+  { id: '529Auto', text: 'Set up automatic deposits into a 529 college savings plan.', checked: false },
+  { id: 'investmentAuto', text: 'Schedule recurring investments into a brokerage account.', checked: false },
+  { id: 'roundUpAppAuto', text: 'Use a "round-up" app (e.g., Acorns, Chime) to automatically save spare change.', checked: false },
+  { id: 'billPayAuto', text: 'Automate bill payments from a dedicated account, transferring funds into it.', checked: false },
+  { id: 'rolloverBudget', text: 'Automatically roll over unspent budget money to savings at month-end.', checked: false },
+  { id: 'loanExtraPaymentsAuto', text: 'Automate extra payments on a mortgage, student loan, or other debt.', checked: false },
+  { id: 'vacationFundAuto', text: 'Set up recurring transfers to a dedicated vacation savings fund.', checked: false },
+  { id: 'holidayFundAuto', text: 'Automate savings for holiday spending throughout the year.', checked: false },
+  { id: 'emergencyFundAuto', text: 'Set up consistent automatic transfers to your emergency fund.', checked: false },
+  { id: 'taxRefundSplitAuto', text: 'Directly deposit a portion of your tax refund into a savings account.', checked: false },
+  { id: 'bonusSavingsAuto', text: 'Automatically save a percentage of any work bonuses or unexpected income.', checked: false },
+  { id: 'recurringDonationAuto', text: 'Automate regular donations or tithes to charity/church.', checked: false },
+  { id: 'kidsCollegeFundAuto', text: 'Automate contributions to children\'s college savings (e.g., UGMA/UTMA).', checked: false },
+  { id: 'sinkingFundAuto', text: 'Automate transfers to sinking funds for large upcoming expenses (e.g., car repair, new appliance).', checked: false },
+  { id: 'dividendReinvestmentAuto', text: 'Automate dividend reinvestment in your investment accounts.', checked: false },
+  { id: 'creditCardAutoPayFull', text: 'Set up credit card to auto-pay statement balance in full each month.', checked: false },
+  { id: 'subscriptionReminderAuto', text: 'Use apps that track subscriptions and remind you before renewal to review/cancel.', checked: false },
+  { id: 'debtSnowballAuto', text: 'Automate extra payments on the smallest debt in a debt snowball plan.', checked: false },
+  { id: 'debtAvalancheAuto', text: 'Automate extra payments on the highest interest debt in a debt avalanche plan.', checked: false },
+  { id: 'financialPlannerAuto', text: 'Work with a financial planner who can set up automated investment strategies.', checked: false },
+  { id: 'healthInsuranceSavingsAuto', text: 'Automate contributions to a Flexible Spending Account (FSA) or similar.', checked: false },
+  { id: 'rentalPropertySavingsAuto', text: 'Automatically transfer a portion of rental income to a maintenance fund.', checked: false },
+  { id: 'selfEmploymentTaxAuto', text: 'Automate transfers for self-employment taxes to a separate account.', checked: false },
+  { id: 'futureGoalsAuto', text: 'Set up dedicated automatic transfers for specific future goals (e.g., down payment, new car).', checked: false },
+  { id: 'yearlyReviewAuto', text: 'Schedule an annual calendar reminder for a comprehensive financial automation review.', checked: false }
+];
 
 // --- Component: Header ---
 const Header = ({ setActiveTab }) => (
@@ -164,7 +232,6 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-        {/* Income Section */}
         <div className="bg-green-50 p-6 rounded-lg shadow-md border-t-4 border-green-600">
           <h3 className="text-2xl font-bold text-green-800 mb-4 flex items-center"><DollarSign className="mr-2" /> Income</h3>
           <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -215,7 +282,6 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
           <p className="text-xl font-bold text-green-800 text-right mt-4">Total Income: {formatCurrency(totalIncome)}</p>
         </div>
 
-        {/* Expenses Section */}
         <div className="bg-red-50 p-6 rounded-lg shadow-md border-t-4 border-red-600">
           <h3 className="text-2xl font-bold text-red-800 mb-4 flex items-center"><BarChart2 className="mr-2" /> Expenses</h3>
           <div className="flex flex-col md:flex-row gap-4 mb-4">
@@ -276,7 +342,6 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
         </div>
       </div>
 
-      {/* Money Leaks Visualization */}
       <div className="bg-white p-6 rounded-lg shadow-lg border-t-4 border-purple-600 mt-8">
         <h3 className="text-2xl font-bold text-purple-800 mb-4 flex items-center"><Target className="mr-2" /> Potential Money Leaks (Expenses Under $200)</h3>
         {sortedMoneyLeakCategories.length === 0 ? (
@@ -307,39 +372,39 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
 // --- Sheet: Step 2 - Build Your Emergency Fund ---
 const Step2 = ({ savingsData, setSavingsData }) => {
   const [newFundAmount, setNewFundAmount] = useState('');
+  // Use a local state for the input field, initialized from props, and updated when props change
   const [newGoalAmount, setNewGoalAmount] = useState(savingsData.emergencyFundGoal);
-  const [savingsMethods, setSavingsMethods] = useState([ // Moved from Step3
-    { id: 'hysa', text: <>Open a <a href="https://shanitene.com/wealthfront" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">High-Yield Savings Account (HYSA)</a> for better interest.</>, checked: false },
-    { id: 'roundUpApp', text: 'Use a "round-up" app (e.g., Acorns, Chime) for spare change savings.', checked: false },
-    { id: 'rakuten', text: <>Use cash-back apps like <a href="https://shanitene.com/rakuten" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Rakuten</a> for online shopping savings.</>, checked: false },
-    { id: 'couponApps', text: 'Utilize coupon apps (e.g., Ibotta, Fetch Rewards) for grocery savings.', checked: false },
-    { id: 'gasApps', text: 'Find cheaper gas prices using apps (e.g., GasBuddy) to save on fuel.', checked: false },
-    { id: 'directDepositSplit', text: 'Split your direct deposit to automatically send a portion to savings/investments.', checked: false },
-    { id: 'payYourselfFirst', text: 'Automatically transfer a set amount to savings on payday (Pay Yourself First).', checked: false },
-    { id: 'mealPlanning', text: 'Plan meals weekly to reduce food waste and impulse grocery buys.', checked: false },
-    { id: 'cancelSubscriptions', text: 'Review and cancel unused subscriptions.', checked: false },
-    { id: 'publicTransport', text: 'Use public transportation or carpool to save on commuting costs.', checked: false },
-    { id: 'energyAudit', text: 'Conduct an energy audit at home to find ways to lower utility bills.', checked: false },
-    { id: 'negotiateBills', text: 'Negotiate lower rates for internet, cable, or insurance bills.', checked: false },
-    { id: 'diyInstead', text: 'Do small repairs or projects yourself instead of hiring help.', checked: false },
-    { id: 'coffeeAtHome', text: 'Make coffee at home instead of buying it daily.', checked: false },
-    { id: 'packedLunches', text: 'Pack lunches for work/school to avoid eating out.', checked: false },
-    { id: 'bulkBuying', text: 'Buy non-perishable items in bulk when on sale.', checked: false },
-    { id: 'libraryUse', text: 'Borrow books, movies, and games from the library instead of buying.', checked: false },
-    { id: 'sellUnusedItems', text: 'Sell unused clothing, electronics, or household items.', checked: false },
-    { id: 'priceCompare', text: 'Always compare prices online before making a significant purchase.', checked: false },
-    { id: 'repurposeItems', text: 'Find new uses for old items instead of buying new ones.', checked: false },
-    { id: 'waterBottle', text: 'Carry a reusable water bottle instead of buying bottled water.', checked: false },
-    { id: 'loyaltyPrograms', text: 'Join loyalty programs for stores you frequent.', checked: false },
-    { id: 'delayPurchases', text: 'Implement a 30-day rule for non-essential purchases.', checked: false },
-    { id: 'digitalCoupons', text: 'Use digital coupons and store loyalty apps for discounts.', checked: false },
-    { id: 'avoidATMFees', text: 'Avoid ATM fees by using your bank\'s network or getting cash back.', checked: false },
-    { id: 'lowerPhoneBill', text: 'Switch to a cheaper phone plan or negotiate current rates.', checked: false },
-    { id: 'homeCooking', text: 'Cook more at home instead of relying on takeout or restaurants.', checked: false },
-    { id: 'smartThermostat', text: 'Install a smart thermostat to optimize energy usage.', checked: false },
-    { id: 'gardening', text: 'Grow some of your own fruits and vegetables.', checked: false },
-    { id: 'usedItems', text: 'Buy quality used items (clothes, furniture) instead of new.', checked: false }
-  ]);
+  // Separate state for savings methods, loaded from localStorage
+  const [savingsMethods, setSavingsMethods] = useState(() => {
+    try {
+      const storedMethods = localStorage.getItem('eternalWealth_savingsMethods');
+      // If storedMethods exist, parse them. Otherwise, use DEFAULT_SAVINGS_METHODS and set initial checked status to false.
+      // Filter out any methods from storedMethods that are not in DEFAULT_SAVINGS_METHODS
+      const parsedMethods = storedMethods ? JSON.parse(storedMethods) : [];
+      return DEFAULT_SAVINGS_METHODS.map(defaultMethod => {
+        const stored = parsedMethods.find(sm => sm.id === defaultMethod.id);
+        return { ...defaultMethod, checked: stored ? stored.checked : false };
+      });
+    } catch (e) {
+      console.error("Failed to parse savings methods from localStorage:", e);
+      return DEFAULT_SAVINGS_METHODS.map(method => ({ ...method, checked: false }));
+    }
+  });
+
+  // Effect to sync newGoalAmount with savingsData.emergencyFundGoal if it changes externally
+  useEffect(() => {
+    setNewGoalAmount(savingsData.emergencyFundGoal);
+  }, [savingsData.emergencyFundGoal]);
+
+
+  // Effect to save savingsMethods to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_savingsMethods', JSON.stringify(savingsMethods.map(({ id, checked }) => ({ id, checked }))));
+    } catch (e) {
+      console.error("Failed to save savings methods to localStorage:", e);
+    }
+  }, [savingsMethods]);
 
   const handleUpdateFund = () => {
     const amount = parseFloat(newFundAmount);
@@ -356,7 +421,7 @@ const Step2 = ({ savingsData, setSavingsData }) => {
     }
   };
 
-  const toggleSavingsMethod = (id) => { // Moved from Step3
+  const toggleSavingsMethod = (id) => {
     setSavingsMethods(prevMethods =>
       prevMethods.map(method =>
         method.id === id ? { ...method, checked: !method.checked } : method
@@ -435,7 +500,6 @@ const Step2 = ({ savingsData, setSavingsData }) => {
         </ul>
       </div>
 
-      {/* 30 Ways to Save More Money - Now in Step 2 */}
       <div className="bg-emerald-50 p-6 rounded-lg shadow-md border-t-4 border-emerald-600">
         <h3 className="text-2xl font-bold text-emerald-800 mb-4 flex items-center"><HeartHandshake className="mr-2" /> 30 Ways to Save More Money</h3>
         <p className="text-gray-700 mb-6">Explore these diverse methods to boost your savings. Check off the ones you'll implement!</p>
@@ -450,7 +514,6 @@ const Step2 = ({ savingsData, setSavingsData }) => {
                 onChange={() => toggleSavingsMethod(method.id)}
                 className="form-checkbox h-5 w-5 text-emerald-600 rounded-md mt-1 cursor-pointer"
               />
-              {/* Render text as JSX to include anchor tags */}
               <p className={`text-sm flex-grow ${method.checked ? 'text-gray-600 line-through' : 'text-gray-800'}`}>
                 {method.text}
               </p>
@@ -467,40 +530,49 @@ const Step2 = ({ savingsData, setSavingsData }) => {
 const Step3 = ({ automationData, setAutomationData }) => {
   const [newMethod, setNewMethod] = useState('');
   const [newAmountFrequency, setNewAmountFrequency] = useState('');
-  const [challengeProgress, setChallengeProgress] = useState(Array(30).fill(false)); // State for 30-day savings challenge
+  const [challengeProgress, setChallengeProgress] = useState(() => {
+    try {
+      const storedProgress = localStorage.getItem('eternalWealth_challengeProgress');
+      return storedProgress ? JSON.parse(storedProgress) : Array(30).fill(false);
+    } catch (e) {
+      console.error("Failed to parse challenge progress from localStorage:", e);
+      return Array(30).fill(false);
+    }
+  }); // State for 30-day savings challenge
+  
   // New state for automation strategies
-  const [automationStrategies, setAutomationStrategies] = useState([
-    { id: 'autoTransfer', text: 'Set up automatic transfers from checking to savings/investments.', checked: false },
-    { id: 'directDepositSplit', text: 'Split your direct deposit to send a portion directly to savings/investments.', checked: false },
-    { id: 'retirementAuto', text: 'Automate contributions to your 401k/403b (employer-sponsored retirement).', checked: false },
-    { id: 'iraAuto', text: 'Set up recurring automatic contributions to an Individual Retirement Account (IRA).', checked: false },
-    { id: 'hsaAuto', text: 'Automate contributions to a Health Savings Account (HSA).', checked: false },
-    { id: '529Auto', text: 'Set up automatic deposits into a 529 college savings plan.', checked: false },
-    { id: 'investmentAuto', text: 'Schedule recurring investments into a brokerage account.', checked: false },
-    { id: 'roundUpAppAuto', text: 'Use a "round-up" app (e.g., Acorns, Chime) to automatically save spare change.', checked: false },
-    { id: 'billPayAuto', text: 'Automate bill payments from a dedicated account, transferring funds into it.', checked: false },
-    { id: 'rolloverBudget', text: 'Automatically roll over unspent budget money to savings at month-end.', checked: false },
-    { id: 'loanExtraPaymentsAuto', text: 'Automate extra payments on a mortgage, student loan, or other debt.', checked: false },
-    { id: 'vacationFundAuto', text: 'Set up recurring transfers to a dedicated vacation savings fund.', checked: false },
-    { id: 'holidayFundAuto', text: 'Automate savings for holiday spending throughout the year.', checked: false },
-    { id: 'emergencyFundAuto', text: 'Set up consistent automatic transfers to your emergency fund.', checked: false },
-    { id: 'taxRefundSplitAuto', text: 'Directly deposit a portion of your tax refund into a savings account.', checked: false },
-    { id: 'bonusSavingsAuto', text: 'Automatically save a percentage of any work bonuses or unexpected income.', checked: false },
-    { id: 'recurringDonationAuto', text: 'Automate regular donations or tithes to charity/church.', checked: false },
-    { id: 'kidsCollegeFundAuto', text: 'Automate contributions to children\'s college savings (e.g., UGMA/UTMA).', checked: false },
-    { id: 'sinkingFundAuto', text: 'Set up automatic transfers to sinking funds for large upcoming expenses (e.g., car repair, new appliance).', checked: false },
-    { id: 'dividendReinvestmentAuto', text: 'Automate dividend reinvestment in your investment accounts.', checked: false },
-    { id: 'creditCardAutoPayFull', text: 'Set up credit card to auto-pay statement balance in full each month.', checked: false },
-    { id: 'subscriptionReminderAuto', text: 'Use apps that track subscriptions and remind you before renewal to review/cancel.', checked: false },
-    { id: 'debtSnowballAuto', text: 'Automate extra payments on the smallest debt in a debt snowball plan.', checked: false },
-    { id: 'debtAvalancheAuto', text: 'Automate extra payments on the highest interest debt in a debt avalanche plan.', checked: false },
-    { id: 'financialPlannerAuto', text: 'Work with a financial planner who can set up automated investment strategies.', checked: false },
-    { id: 'healthInsuranceSavingsAuto', text: 'Automate contributions to a Flexible Spending Account (FSA) or similar.', checked: false },
-    { id: 'rentalPropertySavingsAuto', text: 'Automatically transfer a portion of rental income to a maintenance fund.', checked: false },
-    { id: 'selfEmploymentTaxAuto', text: 'Automate transfers for self-employment taxes to a separate account.', checked: false },
-    { id: 'futureGoalsAuto', text: 'Set up dedicated automatic transfers for specific future goals (e.g., down payment, new car).', checked: false },
-    { id: 'yearlyReviewAuto', text: 'Schedule an annual calendar reminder for a comprehensive financial automation review.', checked: false }
-  ]);
+  const [automationStrategies, setAutomationStrategies] = useState(() => {
+    try {
+      const storedStrategies = localStorage.getItem('eternalWealth_automationStrategies');
+      const parsedStrategies = storedStrategies ? JSON.parse(storedStrategies) : [];
+      return DEFAULT_AUTOMATION_STRATEGIES.map(defaultStrategy => {
+        const stored = parsedStrategies.find(ss => ss.id === defaultStrategy.id);
+        return { ...defaultStrategy, checked: stored ? stored.checked : false };
+      });
+    } catch (e) {
+      console.error("Failed to parse automation strategies from localStorage:", e);
+      return DEFAULT_AUTOMATION_STRATEGIES.map(strategy => ({ ...strategy, checked: false }));
+    }
+  });
+
+  // Effect to save challengeProgress to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_challengeProgress', JSON.stringify(challengeProgress));
+    } catch (e) {
+      console.error("Failed to save challenge progress to localStorage:", e);
+    }
+  }, [challengeProgress]);
+
+  // Effect to save automationStrategies to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_automationStrategies', JSON.stringify(automationStrategies.map(({ id, checked }) => ({ id, checked }))));
+    } catch (e) {
+      console.error("Failed to save automation strategies to localStorage:", e);
+    }
+  }, [automationStrategies]);
+
 
   const handleAddAutomation = () => {
     if (newMethod && newAmountFrequency) {
@@ -544,7 +616,6 @@ const Step3 = ({ automationData, setAutomationData }) => {
         Set up systems to move money automatically, like God's manna in the wilderness.
       </p>
 
-      {/* Your Automation Plan (kept as is, as it's a specific type of saving) */}
       <div className="bg-indigo-50 p-6 rounded-lg shadow-md border-t-4 border-indigo-600 mb-8">
         <h3 className="text-2xl font-bold text-indigo-800 mb-4 flex items-center"><ArrowRightCircle className="mr-2" /> Your Custom Automation Plan</h3>
         <p className="text-gray-700 mb-4">Add any specific automation methods you've set up or plan to implement.</p>
@@ -632,7 +703,6 @@ const Step3 = ({ automationData, setAutomationData }) => {
         </div>
       </div>
 
-      {/* 30 Automation Strategies to Set & Forget - New in Step 3 */}
       <div className="bg-emerald-50 p-6 rounded-lg shadow-md border-t-4 border-emerald-600">
         <h3 className="text-2xl font-bold text-emerald-800 mb-4 flex items-center"><HeartHandshake className="mr-2" /> 30 Automation Strategies to Set & Forget</h3>
         <p className="text-gray-700 mb-6">These are specific ways to automate your money movement. Check off the ones you'll implement!</p>
@@ -679,7 +749,7 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
     <div className="p-6">
       <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">4. Cut Noise, Not Life</h2>
       <p className="text-gray-600 mb-8 text-center max-w-2xl mx-auto">
-        "Every person should eat, drink, and find satisfaction in the good of their labor because it is a gift from God" <br/> **Ecclesiastes 3:13**
+        "Every person should eat, drink, and find satisfaction in the good of their labor because it is a gift from God." <br/> **Ecclesiastes 3:13**
         Saving isn't punishment; it's alignment.
         Cut the noise that doesn’t add value, but keep what truly matters.
       </p>
@@ -733,7 +803,7 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
               <ul className="space-y-2">
                 {noiseLifeData.filter(item => item.type === 'noise').map((item) => (
                   <li key={item.id} className="flex items-center justify-between text-gray-700 bg-red-50 p-2 rounded-md">
-                    <span className="flex items-center gap-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-x-circle text-red-500"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg> {item.item}</span>
+                    <span className="flex items-center gap-2"><XCircle size={18} className="text-red-500" /> {item.item}</span>
                     <button onClick={() => removeItem(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
                   </li>
                 ))}
@@ -749,7 +819,7 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
               <ul className="space-y-2">
                 {noiseLifeData.filter(item => item.type === 'life').map((item) => (
                   <li key={item.id} className="flex items-center justify-between text-gray-700 bg-green-50 p-2 rounded-md">
-                    <span className="flex items-center gap-2"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-circle text-green-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-8.8"></path><path d="m15 2 7 7-7 7"></path></svg> {item.item}</span>
+                    <span className="flex items-center gap-2"><CheckCircle size={18} className="text-green-500" /> {item.item}</span>
                     <button onClick={() => removeItem(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
                   </li>
                 ))}
@@ -760,7 +830,7 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
 
         <div className="mt-10 p-4 bg-orange-100 rounded-md text-orange-800 flex items-center gap-3">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-leaf"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.4 15 2c-2.2 2.8-4.7 5-8 5a6 6 0 0 0-3 4c0 1 0 2 1 3a6 6 0 0 0 3 2l.2.2c-.3.2-.6.5-.8.8l-1.5 1.5c-.7.7-1.7 1-2.7 1C3 21 2 20.4 2 19c0-1 0-2 2-4h3l-1-1c-1.2-1.2-2-2.9-2-5a7 7 0 0 1 12-6.2c.2-.2.6-.4 1-.2 1.4.6 2.5 2.1 3 4.4 0 1 .4 2.6-.4 4.8-.7 2.2-2.3 4.3-5 5.7"></path></svg> {/* Leaf/Plant SVG for Stewardship */}
-          <p className="font-semibold">God wants you to enjoy life, just not waste it.This is about stewardship, not scarcity.</p>
+          <p className="font-semibold">God wants you to enjoy life, just not waste it. This is about stewardship, not scarcity.</p>
         </div>
         <p className="text-center italic text-gray-700 mt-8">Declare it: "I'm cutting noise, not life!"</p>
       </div>
@@ -773,7 +843,15 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
 const Step5 = ({ actionPlanData, setActionPlanData, totalIncome }) => {
   const [newActionStep, setNewActionStep] = useState('');
   const [newActionTimeline, setNewActionTimeline] = useState('');
-  const [prayerCalendar, setPrayerCalendar] = useState(Array(30).fill(false)); // State for 30-day prayer calendar
+  const [prayerCalendar, setPrayerCalendar] = useState(() => {
+    try {
+      const storedProgress = localStorage.getItem('eternalWealth_prayerCalendar');
+      return storedProgress ? JSON.parse(storedProgress) : Array(30).fill(false);
+    } catch (e) {
+      console.error("Failed to parse prayer calendar from localStorage:", e);
+      return Array(30).fill(false);
+    }
+  }); // State for 30-day prayer calendar
 
   const prayers = [
     "Day 1: Lord, grant me **clarity** to see my financial reality and make wise decisions. (Face Your Numbers)",
@@ -807,6 +885,15 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome }) => {
     "Day 29: With every automated transfer, I sow seeds of financial freedom and future blessing. (Automate Your Obedience)",
     "Day 30: Thank you, God, for the complete security and peace that comes from a fully funded **emergency fund**. (Emergency Fund)"
   ];
+
+  // Effect to save prayerCalendar to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_prayerCalendar', JSON.stringify(prayerCalendar));
+    } catch (e) {
+      console.error("Failed to save prayer calendar to localStorage:", e);
+    }
+  }, [prayerCalendar]);
 
   const handleAddAction = () => {
     if (newActionStep && newActionTimeline) {
@@ -907,7 +994,6 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome }) => {
         </div>
       </div>
 
-      {/* 30-Day Prayer Calendar */}
       <div className="bg-fuchsia-50 p-6 rounded-lg shadow-md border-t-4 border-fuchsia-600">
         <h3 className="text-2xl font-bold text-fuchsia-800 mb-4 flex items-center"><Handshake className="mr-2" /> 30-Day Prayer Calendar</h3>
         <p className="text-gray-700 mb-6">Recite a different prayer daily, aligning your heart with God's plan for your finances. Check them off as you complete them!</p>
@@ -937,12 +1023,259 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome }) => {
 // --- Main App Component ---
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [incomeData, setIncomeData] = useState([]);
-  const [expenseData, setExpenseData] = useState([]);
-  const [savingsData, setSavingsData] = useState({ emergencyFund: 0, emergencyFundGoal: 1000 });
-  const [automationData, setAutomationData] = useState([]);
-  const [noiseLifeData, setNoiseLifeData] = useState([]);
-  const [actionPlanData, setActionPlanData] = useState([]);
+  // Load initial state from localStorage or use default values
+  const [incomeData, setIncomeData] = useState(() => {
+    try {
+      const storedIncome = localStorage.getItem('eternalWealth_incomeData');
+      return storedIncome ? JSON.parse(storedIncome) : [];
+    } catch (e) {
+      console.error("Failed to parse income data from localStorage:", e);
+      return [];
+    }
+  });
+  const [expenseData, setExpenseData] = useState(() => {
+    try {
+      const storedExpenses = localStorage.getItem('eternalWealth_expenseData');
+      return storedExpenses ? JSON.parse(storedExpenses) : [];
+    } catch (e) { 
+      console.error("Failed to parse expense data from localStorage:", e);
+      return [];
+    }
+  });
+  const [savingsData, setSavingsData] = useState(() => {
+    try {
+      const storedSavings = localStorage.getItem('eternalWealth_savingsData');
+      return storedSavings ? JSON.parse(storedSavings) : { emergencyFund: 0, emergencyFundGoal: 1000 };
+    } catch (e) {
+      console.error("Failed to parse savings data from localStorage:", e);
+      return { emergencyFund: 0, emergencyFundGoal: 1000 };
+    }
+  });
+  const [automationData, setAutomationData] = useState(() => {
+    try {
+      const storedAutomation = localStorage.getItem('eternalWealth_automationData');
+      return storedAutomation ? JSON.parse(storedAutomation) : [];
+    } catch (e) {
+      console.error("Failed to parse automation data from localStorage:", e);
+      return [];
+    }
+  });
+  const [noiseLifeData, setNoiseLifeData] = useState(() => {
+    try {
+      const storedNoiseLife = localStorage.getItem('eternalWealth_noiseLifeData');
+      return storedNoiseLife ? JSON.parse(storedNoiseLife) : [];
+    } catch (e) {
+      console.error("Failed to parse noise/life data from localStorage:", e);
+      return [];
+    }
+  });
+  const [actionPlanData, setActionPlanData] = useState(() => {
+    try {
+      const storedActionPlan = localStorage.getItem('eternalWealth_actionPlanData');
+      return storedActionPlan ? JSON.parse(storedActionPlan) : [];
+    } catch (e) {
+      console.error("Failed to parse action plan data from localStorage:", e);
+      return [];
+    }
+  });
+  const [savingsMethods, setSavingsMethods] = useState(() => { // Re-declared here for multi-tab sync access
+    try {
+      const storedMethods = localStorage.getItem('eternalWealth_savingsMethods');
+      const parsedMethods = storedMethods ? JSON.parse(storedMethods) : [];
+      return DEFAULT_SAVINGS_METHODS.map(defaultMethod => {
+        const stored = parsedMethods.find(sm => sm.id === defaultMethod.id);
+        return { ...defaultMethod, checked: stored ? stored.checked : false };
+      });
+    } catch (e) {
+      console.error("Failed to parse savings methods from localStorage:", e);
+      return DEFAULT_SAVINGS_METHODS.map(method => ({ ...method, checked: false }));
+    }
+  });
+  const [challengeProgress, setChallengeProgress] = useState(() => { // Re-declared here for multi-tab sync access
+    try {
+      const storedProgress = localStorage.getItem('eternalWealth_challengeProgress');
+      return storedProgress ? JSON.parse(storedProgress) : Array(30).fill(false);
+    } catch (e) {
+      console.error("Failed to parse challenge progress from localStorage:", e);
+      return Array(30).fill(false);
+    }
+  });
+  const [automationStrategies, setAutomationStrategies] = useState(() => { // Re-declared here for multi-tab sync access
+    try {
+      const storedStrategies = localStorage.getItem('eternalWealth_automationStrategies');
+      const parsedStrategies = storedStrategies ? JSON.parse(storedStrategies) : [];
+      return DEFAULT_AUTOMATION_STRATEGIES.map(defaultStrategy => {
+        const stored = parsedStrategies.find(ss => ss.id === defaultStrategy.id);
+        return { ...defaultStrategy, checked: stored ? stored.checked : false };
+      });
+    } catch (e) {
+      console.error("Failed to parse automation strategies from localStorage:", e);
+      return DEFAULT_AUTOMATION_STRATEGIES.map(strategy => ({ ...strategy, checked: false }));
+    }
+  });
+  const [prayerCalendar, setPrayerCalendar] = useState(() => { // Re-declared here for multi-tab sync access
+    try {
+      const storedProgress = localStorage.getItem('eternalWealth_prayerCalendar');
+      return storedProgress ? JSON.parse(storedProgress) : Array(30).fill(false);
+    } catch (e) {
+      console.error("Failed to parse prayer calendar from localStorage:", e);
+      return Array(30).fill(false);
+    }
+  });
+
+  // Effects to persist data to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_incomeData', JSON.stringify(incomeData));
+    } catch (e) {
+      console.error("Failed to save income data to localStorage:", e);
+    }
+  }, [incomeData]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_expenseData', JSON.stringify(expenseData));
+    } catch (e) {
+      console.error("Failed to save expense data to localStorage:", e);
+    }
+  }, [expenseData]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_savingsData', JSON.stringify(savingsData));
+    } catch (e) {
+      console.error("Failed to save savings data to localStorage:", e);
+    }
+  }, [savingsData]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_automationData', JSON.stringify(automationData));
+    } catch (e) {
+      console.error("Failed to save automation data to localStorage:", e);
+    }
+  }, [automationData]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_noiseLifeData', JSON.stringify(noiseLifeData));
+    } catch (e) {
+      console.error("Failed to save noise/life data to localStorage:", e);
+    }
+  }, [noiseLifeData]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_actionPlanData', JSON.stringify(actionPlanData));
+    } catch (e) {
+      console.error("Failed to save action plan data to localStorage:", e);
+    }
+  }, [actionPlanData]);
+
+  // Saving for Step 2 and 3 and 5 states (re-added as they were not in the main App component's useEffects)
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_savingsMethods', JSON.stringify(savingsMethods.map(({ id, checked }) => ({ id, checked }))));
+    } catch (e) {
+      console.error("Failed to save savings methods to localStorage:", e);
+    }
+  }, [savingsMethods]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_challengeProgress', JSON.stringify(challengeProgress));
+    } catch (e) {
+      console.error("Failed to save challenge progress to localStorage:", e);
+    }
+  }, [challengeProgress]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_automationStrategies', JSON.stringify(automationStrategies.map(({ id, checked }) => ({ id, checked }))));
+    } catch (e) {
+      console.error("Failed to save automation strategies to localStorage:", e);
+    }
+  }, [automationStrategies]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_prayerCalendar', JSON.stringify(prayerCalendar));
+    } catch (e) {
+      console.error("Failed to save prayer calendar to localStorage:", e);
+    }
+  }, [prayerCalendar]);
+
+
+  // NEW: Effect for localStorage synchronization across tabs
+  useEffect(() => {
+    const handleStorageChange = (event) => {
+      // Check if the change is relevant to your app's data
+      if (event.key && event.key.startsWith('eternalWealth_')) {
+        // Based on the changed key, update the corresponding state
+        try {
+          const newValue = event.newValue ? JSON.parse(event.newValue) : null;
+          
+          switch (event.key) {
+            case 'eternalWealth_incomeData':
+              setIncomeData(newValue || []);
+              break;
+            case 'eternalWealth_expenseData':
+              setExpenseData(newValue || []);
+              break;
+            case 'eternalWealth_savingsData':
+              setSavingsData(newValue || { emergencyFund: 0, emergencyFundGoal: 1000 });
+              break;
+            case 'eternalWealth_automationData':
+              setAutomationData(newValue || []);
+              break;
+            case 'eternalWealth_noiseLifeData':
+              setNoiseLifeData(newValue || []);
+              break;
+            case 'eternalWealth_actionPlanData':
+              setActionPlanData(newValue || []);
+              break;
+            case 'eternalWealth_savingsMethods':
+              // For savingsMethods, we need to map and preserve default items
+              setSavingsMethods(prevMethods => {
+                const updatedMethods = newValue || [];
+                return DEFAULT_SAVINGS_METHODS.map(defaultMethod => {
+                  const stored = updatedMethods.find(sm => sm.id === defaultMethod.id);
+                  return { ...defaultMethod, checked: stored ? stored.checked : false };
+                });
+              });
+              break;
+            case 'eternalWealth_challengeProgress':
+              setChallengeProgress(newValue || Array(30).fill(false));
+              break;
+            case 'eternalWealth_automationStrategies':
+              // Similar mapping for automationStrategies
+              setAutomationStrategies(prevStrategies => {
+                const updatedStrategies = newValue || [];
+                return DEFAULT_AUTOMATION_STRATEGIES.map(defaultStrategy => {
+                  const stored = updatedStrategies.find(ss => ss.id === defaultStrategy.id);
+                  return { ...defaultStrategy, checked: stored ? stored.checked : false };
+                });
+              });
+              break;
+            case 'eternalWealth_prayerCalendar':
+              setPrayerCalendar(newValue || Array(30).fill(false));
+              break;
+            default:
+              break;
+          }
+        } catch (error) {
+          console.error(`Error parsing localStorage item '${event.key}' during storage event:`, error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
+
 
   // Calculate total income for passing to Step 5
   const totalIncome = incomeData.reduce((sum, item) => sum + parseFloat(item.amount), 0);
