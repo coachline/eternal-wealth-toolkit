@@ -181,12 +181,43 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
   const [newExpenseDescription, setNewExpenseDescription] = useState('');
   const [newExpenseAmount, setNewExpenseAmount] = useState('');
 
+  // State for editing income and expenses
+  const [editingIncomeId, setEditingIncomeId] = useState(null);
+  const [editingExpenseId, setEditingExpenseId] = useState(null);
+  const [editIncomeSource, setEditIncomeSource] = useState('');
+  const [editIncomeAmount, setEditIncomeAmount] = useState('');
+  const [editExpenseCategory, setEditExpenseCategory] = useState('');
+  const [editExpenseDescription, setEditExpenseDescription] = useState('');
+  const [editExpenseAmount, setEditExpenseAmount] = useState('');
+
+
   const handleAddIncome = () => {
     if (newIncomeSource && newIncomeAmount) {
       setIncomeData([...incomeData, { id: generateId(), source: newIncomeSource, amount: parseFloat(newIncomeAmount) }]);
       setNewIncomeSource('');
       setNewIncomeAmount('');
     }
+  };
+
+  const handleRemoveIncome = (id) => {
+    setIncomeData(incomeData.filter(item => item.id !== id));
+  };
+
+  const handleEditIncome = (item) => {
+    setEditingIncomeId(item.id);
+    setEditIncomeSource(item.source);
+    setEditIncomeAmount(item.amount);
+  };
+
+  const handleSaveEditedIncome = (id) => {
+    setIncomeData(incomeData.map(item => 
+      item.id === id ? { ...item, source: editIncomeSource, amount: parseFloat(editIncomeAmount) } : item
+    ));
+    setEditingIncomeId(null);
+  };
+
+  const handleCancelEditIncome = () => {
+    setEditingIncomeId(null);
   };
 
   const handleAddExpense = () => {
@@ -197,6 +228,29 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
       setNewExpenseAmount('');
     }
   };
+
+  const handleRemoveExpense = (id) => {
+    setExpenseData(expenseData.filter(item => item.id !== id));
+  };
+
+  const handleEditExpense = (item) => {
+    setEditingExpenseId(item.id);
+    setEditExpenseCategory(item.category);
+    setEditExpenseDescription(item.description);
+    setEditExpenseAmount(item.amount);
+  };
+
+  const handleSaveEditedExpense = (id) => {
+    setExpenseData(expenseData.map(item => 
+      item.id === id ? { ...item, category: editExpenseCategory, description: editExpenseDescription, amount: parseFloat(editExpenseAmount) } : item
+    ));
+    setEditingExpenseId(null);
+  };
+
+  const handleCancelEditExpense = () => {
+    setEditingExpenseId(null);
+  };
+
 
   const totalIncome = incomeData.reduce((sum, item) => sum + item.amount, 0);
   const totalExpenses = expenseData.reduce((sum, item) => sum + item.amount, 0);
@@ -266,13 +320,45 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
                   <tr>
                     <th className="py-2 px-4 text-left text-green-800">Source</th>
                     <th className="py-2 px-4 text-left text-green-800">Amount</th>
+                    <th className="py-2 px-4 text-left text-green-800">Actions</th> {/* Added Actions column */}
                   </tr>
                 </thead>
                 <tbody>
                   {incomeData.map((item) => (
                     <tr key={item.id} className="border-b border-green-100 last:border-0">
-                      <td className="py-2 px-4">{item.source}</td>
-                      <td className="py-2 px-4">{formatCurrency(item.amount)}</td>
+                      {editingIncomeId === item.id ? (
+                        <>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editIncomeSource}
+                              onChange={(e) => setEditIncomeSource(e.target.value)}
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="number"
+                              value={editIncomeAmount}
+                              onChange={(e) => setEditIncomeAmount(e.target.value)}
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            />
+                          </td>
+                          <td className="py-2 px-4 flex gap-2">
+                            <button onClick={() => handleSaveEditedIncome(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
+                            <button onClick={handleCancelEditIncome} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="py-2 px-4">{item.source}</td>
+                          <td className="py-2 px-4">{formatCurrency(item.amount)}</td>
+                          <td className="py-2 px-4 flex gap-2">
+                            <button onClick={() => handleEditIncome(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                            <button onClick={() => handleRemoveIncome(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -324,14 +410,54 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
                     <th className="py-2 px-4 text-left text-red-800">Category</th>
                     <th className="py-2 px-4 text-left text-red-800">Description</th>
                     <th className="py-2 px-4 text-left text-red-800">Amount</th>
+                    <th className="py-2 px-4 text-left text-red-800">Actions</th> {/* Added Actions column */}
                   </tr>
                 </thead>
                 <tbody>
                   {expenseData.map((item) => (
                     <tr key={item.id} className="border-b border-red-100 last:border-0">
-                      <td className="py-2 px-4">{item.category}</td>
-                      <td className="py-2 px-4">{item.description}</td>
-                      <td className="py-2 px-4">{formatCurrency(item.amount)}</td>
+                      {editingExpenseId === item.id ? (
+                        <>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editExpenseCategory}
+                              onChange={(e) => setEditExpenseCategory(e.target.value)}
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editExpenseDescription}
+                              onChange={(e) => setEditExpenseDescription(e.target.value)}
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="number"
+                              value={editExpenseAmount}
+                              onChange={(e) => setEditExpenseAmount(e.target.value)}
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            />
+                          </td>
+                          <td className="py-2 px-4 flex gap-2">
+                            <button onClick={() => handleSaveEditedExpense(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
+                            <button onClick={handleCancelEditExpense} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="py-2 px-4">{item.category}</td>
+                          <td className="py-2 px-4">{item.description}</td>
+                          <td className="py-2 px-4">{formatCurrency(item.amount)}</td>
+                          <td className="py-2 px-4 flex gap-2">
+                            <button onClick={() => handleEditExpense(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                            <button onClick={() => handleRemoveExpense(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                          </td>
+                        </>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -370,41 +496,16 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
 
 
 // --- Sheet: Step 2 - Build Your Emergency Fund ---
-const Step2 = ({ savingsData, setSavingsData }) => {
+const Step2 = ({ savingsData, setSavingsData, savingsMethods, setSavingsMethods }) => {
   const [newFundAmount, setNewFundAmount] = useState('');
   // Use a local state for the input field, initialized from props, and updated when props change
   const [newGoalAmount, setNewGoalAmount] = useState(savingsData.emergencyFundGoal);
-  // Separate state for savings methods, loaded from localStorage
-  const [savingsMethods, setSavingsMethods] = useState(() => {
-    try {
-      const storedMethods = localStorage.getItem('eternalWealth_savingsMethods');
-      // If storedMethods exist, parse them. Otherwise, use DEFAULT_SAVINGS_METHODS and set initial checked status to false.
-      // Filter out any methods from storedMethods that are not in DEFAULT_SAVINGS_METHODS
-      const parsedMethods = storedMethods ? JSON.parse(storedMethods) : [];
-      return DEFAULT_SAVINGS_METHODS.map(defaultMethod => {
-        const stored = parsedMethods.find(sm => sm.id === defaultMethod.id);
-        return { ...defaultMethod, checked: stored ? stored.checked : false };
-      });
-    } catch (e) {
-      console.error("Failed to parse savings methods from localStorage:", e);
-      return DEFAULT_SAVINGS_METHODS.map(method => ({ ...method, checked: false }));
-    }
-  });
 
   // Effect to sync newGoalAmount with savingsData.emergencyFundGoal if it changes externally
   useEffect(() => {
     setNewGoalAmount(savingsData.emergencyFundGoal);
   }, [savingsData.emergencyFundGoal]);
 
-
-  // Effect to save savingsMethods to localStorage whenever it changes
-  useEffect(() => {
-    try {
-      localStorage.setItem('eternalWealth_savingsMethods', JSON.stringify(savingsMethods.map(({ id, checked }) => ({ id, checked }))));
-    } catch (e) {
-      console.error("Failed to save savings methods to localStorage:", e);
-    }
-  }, [savingsMethods]);
 
   const handleUpdateFund = () => {
     const amount = parseFloat(newFundAmount);
@@ -527,51 +628,14 @@ const Step2 = ({ savingsData, setSavingsData }) => {
 
 
 // --- Sheet: Step 3 - Automate Your Obedience ---
-const Step3 = ({ automationData, setAutomationData }) => {
+const Step3 = ({ automationData, setAutomationData, challengeProgress, setChallengeProgress, automationStrategies, setAutomationStrategies }) => {
   const [newMethod, setNewMethod] = useState('');
   const [newAmountFrequency, setNewAmountFrequency] = useState('');
-  const [challengeProgress, setChallengeProgress] = useState(() => {
-    try {
-      const storedProgress = localStorage.getItem('eternalWealth_challengeProgress');
-      return storedProgress ? JSON.parse(storedProgress) : Array(30).fill(false);
-    } catch (e) {
-      console.error("Failed to parse challenge progress from localStorage:", e);
-      return Array(30).fill(false);
-    }
-  }); // State for 30-day savings challenge
-  
-  // New state for automation strategies
-  const [automationStrategies, setAutomationStrategies] = useState(() => {
-    try {
-      const storedStrategies = localStorage.getItem('eternalWealth_automationStrategies');
-      const parsedStrategies = storedStrategies ? JSON.parse(storedStrategies) : [];
-      return DEFAULT_AUTOMATION_STRATEGIES.map(defaultStrategy => {
-        const stored = parsedStrategies.find(ss => ss.id === defaultStrategy.id);
-        return { ...defaultStrategy, checked: stored ? stored.checked : false };
-      });
-    } catch (e) {
-      console.error("Failed to parse automation strategies from localStorage:", e);
-      return DEFAULT_AUTOMATION_STRATEGIES.map(strategy => ({ ...strategy, checked: false }));
-    }
-  });
 
-  // Effect to save challengeProgress to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('eternalWealth_challengeProgress', JSON.stringify(challengeProgress));
-    } catch (e) {
-      console.error("Failed to save challenge progress to localStorage:", e);
-    }
-  }, [challengeProgress]);
-
-  // Effect to save automationStrategies to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('eternalWealth_automationStrategies', JSON.stringify(automationStrategies.map(({ id, checked }) => ({ id, checked }))));
-    } catch (e) {
-      console.error("Failed to save automation strategies to localStorage:", e);
-    }
-  }, [automationStrategies]);
+  // State for editing automation items
+  const [editingAutomationId, setEditingAutomationId] = useState(null);
+  const [editMethod, setEditMethod] = useState('');
+  const [editAmountFrequency, setEditAmountFrequency] = useState('');
 
 
   const handleAddAutomation = () => {
@@ -580,6 +644,27 @@ const Step3 = ({ automationData, setAutomationData }) => {
       setNewMethod('');
       setNewAmountFrequency('');
     }
+  };
+
+  const handleRemoveAutomation = (id) => {
+    setAutomationData(automationData.filter(item => item.id !== id));
+  };
+
+  const handleEditAutomation = (item) => {
+    setEditingAutomationId(item.id);
+    setEditMethod(item.method);
+    setEditAmountFrequency(item.amountFrequency);
+  };
+
+  const handleSaveEditedAutomation = (id) => {
+    setAutomationData(automationData.map(item => 
+      item.id === id ? { ...item, method: editMethod, amountFrequency: editAmountFrequency } : item
+    ));
+    setEditingAutomationId(null);
+  };
+
+  const handleCancelEditAutomation = () => {
+    setEditingAutomationId(null);
   };
 
   const toggleStatus = (id) => {
@@ -643,39 +728,72 @@ const Step3 = ({ automationData, setAutomationData }) => {
         </div>
 
         <div className="max-h-60 overflow-y-auto mb-4 border border-indigo-200 rounded-md">
-          {automationData.length === 0 ? (
-            <p className="text-gray-500 text-center p-4">No custom automation plans set up yet.</p>
-          ) : (
-            <table className="min-w-full bg-white text-sm">
-              <thead className="sticky top-0 bg-indigo-100">
-                <tr>
-                  <th className="py-2 px-4 text-left text-indigo-800">Method</th>
-                  <th className="py-2 px-4 text-left text-indigo-800">Amount/Frequency</th>
-                  <th className="py-2 px-4 text-left text-indigo-800">Status</th>
-                  <th className="py-2 px-4 text-left text-indigo-800">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {automationData.map((item) => (
-                  <tr key={item.id} className="border-b border-indigo-100 last:border-0">
-                    <td className="py-2 px-4">{item.method}</td>
-                    <td className="py-2 px-4">{item.amountFrequency}</td>
-                    <td className={`py-2 px-4 font-semibold ${item.status === 'Active' ? 'text-green-600' : 'text-yellow-600'}`}>
-                      {item.status}
-                    </td>
-                    <td className="py-2 px-4">
-                      <button
-                        onClick={() => toggleStatus(item.id)}
-                        className="text-indigo-600 hover:text-indigo-800 underline text-sm"
-                      >
-                        Toggle Status
-                      </button>
-                    </td>
+            {automationData.length === 0 ? (
+              <p className="text-gray-500 text-center p-4">No custom automation plans set up yet.</p>
+            ) : (
+              <table className="min-w-full bg-white text-sm">
+                <thead className="sticky top-0 bg-indigo-100">
+                  <tr>
+                    <th className="py-2 px-4 text-left text-indigo-800">Method</th>
+                    <th className="py-2 px-4 text-left text-indigo-800">Amount/Frequency</th>
+                    <th className="py-2 px-4 text-left text-indigo-800">Status</th>
+                    <th className="py-2 px-4 text-left text-indigo-800">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                </thead>
+                <tbody>
+                  {automationData.map((item) => (
+                    <tr key={item.id} className="border-b border-indigo-100 last:border-0">
+                      {editingAutomationId === item.id ? (
+                        <>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editMethod}
+                              onChange={(e) => setEditMethod(e.target.value)}
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editAmountFrequency}
+                              onChange={(e) => setEditAmountFrequency(e.target.value)}
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <select
+                              value={item.status} // Still showing current status for context
+                              onChange={(e) => toggleStatus(item.id)} // Allow changing status during edit
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            >
+                              <option value="Active">Active</option>
+                              <option value="Planned">Planned</option>
+                            </select>
+                          </td>
+                          <td className="py-2 px-4 flex gap-2">
+                            <button onClick={() => handleSaveEditedAutomation(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
+                            <button onClick={handleCancelEditAutomation} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="py-2 px-4">{item.method}</td>
+                          <td className="py-2 px-4">{item.amountFrequency}</td>
+                          <td className={`py-2 px-4 font-semibold ${item.status === 'Active' ? 'text-green-600' : 'text-yellow-600'}`}>
+                            {item.status}
+                          </td>
+                          <td className="py-2 px-4 flex gap-2">
+                            <button onClick={() => handleEditAutomation(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                            <button onClick={() => handleRemoveAutomation(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
         </div>
       </div>
 
@@ -734,6 +852,12 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
   const [newItem, setNewItem] = useState('');
   const [isNoise, setIsNoise] = useState(true);
 
+  // State for editing noise/life items
+  const [editingNoiseLifeId, setEditingNoiseLifeId] = useState(null);
+  const [editNoiseLifeItem, setEditNoiseLifeItem] = useState('');
+  const [editNoiseLifeType, setEditNoiseLifeType] = useState(true); // true for noise, false for life
+
+
   const handleAddItem = () => { // Corrected function name
     if (newItem) {
       setNoiseLifeData([...noiseLifeData, { id: generateId(), item: newItem, type: isNoise ? 'noise' : 'life' }]);
@@ -744,6 +868,24 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
   const removeItem = (id) => {
     setNoiseLifeData(noiseLifeData.filter(item => item.id !== id));
   };
+
+  const handleEditNoiseLife = (item) => {
+    setEditingNoiseLifeId(item.id);
+    setEditNoiseLifeItem(item.item);
+    setEditNoiseLifeType(item.type === 'noise');
+  };
+
+  const handleSaveEditedNoiseLife = (id) => {
+    setNoiseLifeData(noiseLifeData.map(item =>
+      item.id === id ? { ...item, item: editNoiseLifeItem, type: editNoiseLifeType ? 'noise' : 'life' } : item
+    ));
+    setEditingNoiseLifeId(null);
+  };
+
+  const handleCancelEditNoiseLife = () => {
+    setEditingNoiseLifeId(null);
+  };
+
 
   return (
     <div className="p-6">
@@ -803,8 +945,27 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
               <ul className="space-y-2">
                 {noiseLifeData.filter(item => item.type === 'noise').map((item) => (
                   <li key={item.id} className="flex items-center justify-between text-gray-700 bg-red-50 p-2 rounded-md">
-                    <span className="flex items-center gap-2"><XCircle size={18} className="text-red-500" /> {item.item}</span>
-                    <button onClick={() => removeItem(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                    {editingNoiseLifeId === item.id && item.type === 'noise' ? (
+                      <div className="flex flex-grow items-center gap-2">
+                        <XCircle size={18} className="text-red-500" />
+                        <input
+                          type="text"
+                          value={editNoiseLifeItem}
+                          onChange={(e) => setEditNoiseLifeItem(e.target.value)}
+                          className="p-1 border border-gray-300 rounded-md flex-grow"
+                        />
+                        <button onClick={() => handleSaveEditedNoiseLife(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
+                        <button onClick={handleCancelEditNoiseLife} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                      </div>
+                    ) : (
+                      <span className="flex items-center gap-2"><XCircle size={18} className="text-red-500" /> {item.item}</span>
+                    )}
+                    {editingNoiseLifeId !== item.id && (
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEditNoiseLife(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                        <button onClick={() => removeItem(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -819,8 +980,27 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
               <ul className="space-y-2">
                 {noiseLifeData.filter(item => item.type === 'life').map((item) => (
                   <li key={item.id} className="flex items-center justify-between text-gray-700 bg-green-50 p-2 rounded-md">
-                    <span className="flex items-center gap-2"><CheckCircle size={18} className="text-green-500" /> {item.item}</span>
-                    <button onClick={() => removeItem(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                    {editingNoiseLifeId === item.id && item.type === 'life' ? (
+                      <div className="flex flex-grow items-center gap-2">
+                        <CheckCircle size={18} className="text-green-500" />
+                        <input
+                          type="text"
+                          value={editNoiseLifeItem}
+                          onChange={(e) => setEditNoiseLifeItem(e.target.value)}
+                          className="p-1 border border-gray-300 rounded-md flex-grow"
+                        />
+                        <button onClick={() => handleSaveEditedNoiseLife(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
+                        <button onClick={handleCancelEditNoiseLife} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                      </div>
+                    ) : (
+                      <span className="flex items-center gap-2"><CheckCircle size={18} className="text-green-500" /> {item.item}</span>
+                    )}
+                    {editingNoiseLifeId !== item.id && (
+                      <div className="flex gap-2">
+                        <button onClick={() => handleEditNoiseLife(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                        <button onClick={() => removeItem(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -840,18 +1020,15 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
 
 
 // --- Sheet: Step 5 - Pray for Increase + Take Action ---
-const Step5 = ({ actionPlanData, setActionPlanData, totalIncome }) => {
+const Step5 = ({ actionPlanData, setActionPlanData, totalIncome, prayerCalendar, setPrayerCalendar }) => {
   const [newActionStep, setNewActionStep] = useState('');
   const [newActionTimeline, setNewActionTimeline] = useState('');
-  const [prayerCalendar, setPrayerCalendar] = useState(() => {
-    try {
-      const storedProgress = localStorage.getItem('eternalWealth_prayerCalendar');
-      return storedProgress ? JSON.parse(storedProgress) : Array(30).fill(false);
-    } catch (e) {
-      console.error("Failed to parse prayer calendar from localStorage:", e);
-      return Array(30).fill(false);
-    }
-  }); // State for 30-day prayer calendar
+
+  // State for editing action plan items
+  const [editingActionId, setEditingActionId] = useState(null);
+  const [editActionStep, setEditActionStep] = useState('');
+  const [editActionTimeline, setEditActionTimeline] = useState('');
+
 
   const prayers = [
     "Day 1: Lord, grant me **clarity** to see my financial reality and make wise decisions. (Face Your Numbers)",
@@ -886,14 +1063,6 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome }) => {
     "Day 30: Thank you, God, for the complete security and peace that comes from a fully funded **emergency fund**. (Emergency Fund)"
   ];
 
-  // Effect to save prayerCalendar to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('eternalWealth_prayerCalendar', JSON.stringify(prayerCalendar));
-    } catch (e) {
-      console.error("Failed to save prayer calendar to localStorage:", e);
-    }
-  }, [prayerCalendar]);
 
   const handleAddAction = () => {
     if (newActionStep && newActionTimeline) {
@@ -901,6 +1070,27 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome }) => {
       setNewActionStep('');
       setNewActionTimeline('');
     }
+  };
+
+  const handleRemoveAction = (id) => {
+    setActionPlanData(actionPlanData.filter(item => item.id !== id));
+  };
+
+  const handleEditAction = (item) => {
+    setEditingActionId(item.id);
+    setEditActionStep(item.step);
+    setEditActionTimeline(item.timeline);
+  };
+
+  const handleSaveEditedAction = (id) => {
+    setActionPlanData(actionPlanData.map(item =>
+      item.id === id ? { ...item, step: editActionStep, timeline: editActionTimeline } : item
+    ));
+    setEditingActionId(null);
+  };
+
+  const handleCancelEditAction = () => {
+    setEditingActionId(null);
   };
 
   const toggleActionStatus = (id) => {
@@ -948,39 +1138,72 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome }) => {
         </div>
 
         <div className="max-h-60 overflow-y-auto mb-4 border border-teal-200 rounded-md">
-          {actionPlanData.length === 0 ? (
-            <p className="text-gray-500 text-center p-4">No action steps planned yet.</p>
-          ) : (
-            <table className="min-w-full bg-white text-sm">
-              <thead className="sticky top-0 bg-teal-100">
-                <tr>
-                  <th className="py-2 px-4 text-left text-teal-800">Action Step</th>
-                  <th className="py-2 px-4 text-left text-teal-800">Timeline</th>
-                  <th className="py-2 px-4 text-left text-teal-800">Status</th>
-                  <th className="py-2 px-4 text-left text-teal-800">Toggle</th>
-                </tr>
-              </thead>
-              <tbody>
-                {actionPlanData.map((item) => (
-                  <tr key={item.id} className="border-b border-teal-100 last:border-0">
-                    <td className="py-2 px-4">{item.step}</td>
-                    <td className="py-2 px-4">{item.timeline}</td>
-                    <td className={`py-2 px-4 font-semibold ${item.status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>
-                      {item.status}
-                    </td>
-                    <td className="py-2 px-4">
-                      <button
-                        onClick={() => toggleActionStatus(item.id)}
-                        className="text-teal-600 hover:text-teal-800 underline text-sm"
-                      >
-                        {item.status === 'Planned' ? 'Mark Complete' : 'Mark Planned'}
-                      </button>
-                    </td>
+            {actionPlanData.length === 0 ? (
+              <p className="text-gray-500 text-center p-4">No action steps planned yet.</p>
+            ) : (
+              <table className="min-w-full bg-white text-sm">
+                <thead className="sticky top-0 bg-teal-100">
+                  <tr>
+                    <th className="py-2 px-4 text-left text-teal-800">Action Step</th>
+                    <th className="py-2 px-4 text-left text-teal-800">Timeline</th>
+                    <th className="py-2 px-4 text-left text-teal-800">Status</th>
+                    <th className="py-2 px-4 text-left text-teal-800">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                </thead>
+                <tbody>
+                  {actionPlanData.map((item) => (
+                    <tr key={item.id} className="border-b border-teal-100 last:border-0">
+                      {editingActionId === item.id ? (
+                        <>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editActionStep}
+                              onChange={(e) => setEditActionStep(e.target.value)}
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <input
+                              type="text"
+                              value={editActionTimeline}
+                              onChange={(e) => setEditActionTimeline(e.target.value)}
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
+                            <select
+                              value={item.status} // Still showing current status for context
+                              onChange={(e) => toggleActionStatus(item.id)} // Allow changing status during edit
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            >
+                              <option value="Planned">Planned</option>
+                              <option value="Completed">Completed</option>
+                            </select>
+                          </td>
+                          <td className="py-2 px-4 flex gap-2">
+                            <button onClick={() => handleSaveEditedAction(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
+                            <button onClick={handleCancelEditAction} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="py-2 px-4">{item.step}</td>
+                          <td className="py-2 px-4">{item.timeline}</td>
+                          <td className={`py-2 px-4 font-semibold ${item.status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>
+                            {item.status}
+                          </td>
+                          <td className="py-2 px-4 flex gap-2">
+                            <button onClick={() => handleEditAction(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
+                            <button onClick={() => handleRemoveAction(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                          </td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
         </div>
       </div>
 
@@ -1252,7 +1475,7 @@ const App = () => {
               setAutomationStrategies(prevStrategies => {
                 const updatedStrategies = newValue || [];
                 return DEFAULT_AUTOMATION_STRATEGIES.map(defaultStrategy => {
-                  const stored = updatedStrategies.find(ss => ss.id === defaultStrategy.id);
+                  const stored = updatedStrategies.find(ss => ss.id === defaultStrategy.id); 
                   return { ...defaultStrategy, checked: stored ? stored.checked : false };
                 });
               });
@@ -1304,12 +1527,18 @@ const App = () => {
             <Step2
               savingsData={savingsData}
               setSavingsData={setSavingsData}
+              savingsMethods={savingsMethods} // Pass to Step2
+              setSavingsMethods={setSavingsMethods} // Pass to Step2
             />
           )}
           {activeTab === 'step3' && (
             <Step3
               automationData={automationData}
               setAutomationData={setAutomationData}
+              challengeProgress={challengeProgress} // Pass to Step3
+              setChallengeProgress={setChallengeProgress} // Pass to Step3
+              automationStrategies={automationStrategies} // Pass to Step3
+              setAutomationStrategies={setAutomationStrategies} // Pass to Step3
             />
           )}
           {activeTab === 'step4' && (
@@ -1323,6 +1552,8 @@ const App = () => {
               actionPlanData={actionPlanData}
               setActionPlanData={setActionPlanData}
               totalIncome={totalIncome} // Pass total income to Step5
+              prayerCalendar={prayerCalendar} // Pass to Step5
+              setPrayerCalendar={setPrayerCalendar} // Pass to Step5
             />
           )}
         </main>
