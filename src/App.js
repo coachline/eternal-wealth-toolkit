@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  DollarSign, BarChart2, Briefcase, TrendingUp, Handshake, HeartHandshake, Home, Shield, Lightbulb, CheckCircle, Target, ArrowRightCircle, XCircle // Added XCircle
+  DollarSign, BarChart2, Briefcase, TrendingUp, Handshake, HeartHandshake, Home, Shield, Lightbulb, CheckCircle, Target, ArrowRightCircle, XCircle, Users // Added XCircle, Users for Support tab
 } from 'lucide-react'; // Using lucide-react for icons
 
 // Utility function to format currency
@@ -13,9 +13,9 @@ const generateId = () => Math.random().toString(36).substring(2, 9);
 
 // --- Define default savings methods outside the component to avoid re-creation issues with JSX ---
 const DEFAULT_SAVINGS_METHODS = [
-  { id: 'hysa', text: <>Open a <a href="https://shanitene.com/wealthfront" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">High-Yield Savings Account (HYSA)</a> for better interest.</>, checked: false },
+  { id: 'hysa', text: 'Open a High-Yield Savings Account (HYSA) for better interest.', url: 'https://shanitene.com/wealthfront', checked: false }, // Added URL
   { id: 'roundUpApp', text: 'Use a "round-up" app (e.g., Acorns, Chime) for spare change savings.', checked: false },
-  { id: 'rakuten', text: <>Use cash-back apps like <a href="https://shanitene.com/rakuten" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Rakuten</a> for online shopping savings.</>, checked: false },
+  { id: 'rakuten', text: 'Use cash-back apps like Rakuten for online shopping savings.', url: 'https://shanitene.com/rakuten', checked: false }, // Added URL
   { id: 'couponApps', text: 'Utilize coupon apps (e.g., Ibotta, Fetch Rewards) for grocery savings.', checked: false },
   { id: 'gasApps', text: 'Find cheaper gas prices using apps (e.g., GasBuddy) to save on fuel.', checked: false },
   { id: 'directDepositSplit', text: 'Split your direct deposit to automatically send a portion to savings/investments.', checked: false },
@@ -86,11 +86,12 @@ const Header = ({ setActiveTab }) => (
       <h1 className="text-3xl font-bold text-white mb-4 md:mb-0">Eternal Wealth Toolkit</h1>
       <nav className="flex flex-wrap gap-2 md:gap-4">
         <TabButton label="Dashboard" onClick={() => setActiveTab('dashboard')} icon={<Home size={18} />} />
-        <TabButton label="Face Numbers" onClick={() => setActiveTab('step1')} icon={<BarChart2 size={18} />} />
+        <TabButton label="Know Numbers" onClick={() => setActiveTab('step1')} icon={<BarChart2 size={18} />} />
         <TabButton label="Emergency Fund" onClick={() => setActiveTab('step2')} icon={<Shield size={18} />} />
         <TabButton label="Automate" onClick={() => setActiveTab('step3')} icon={<ArrowRightCircle size={18} />} />
         <TabButton label="Cut Noise" onClick={() => setActiveTab('step4')} icon={<Lightbulb size={18} />} />
         <TabButton label="Pray & Act" onClick={() => setActiveTab('step5')} icon={<Handshake size={18} />} />
+        <TabButton label="Support" onClick={() => setActiveTab('support')} icon={<Users size={18} />} />
       </nav>
     </div>
   </header>
@@ -134,12 +135,36 @@ const ProgressBar = ({ current, target, label }) => {
 
 
 // --- Sheet: Dashboard ---
-const Dashboard = ({ incomeData, expenseData, savingsData }) => {
+const Dashboard = ({ incomeData, expenseData, savingsData, noiseLifeData, actionPlanData, emergencyFundContributions }) => {
   const totalIncome = incomeData.reduce((sum, item) => sum + parseFloat(item.amount), 0);
   const totalExpenses = expenseData.reduce((sum, item) => sum + parseFloat(item.amount), 0);
   const netSavings = totalIncome - totalExpenses;
-  const currentSavings = savingsData.emergencyFund;
+
+  // Calculate current total emergency fund from initial balance and contributions
+  const totalContributions = emergencyFundContributions.reduce((sum, item) => sum + item.amount, 0);
+  const currentTotalEmergencyFund = (parseFloat(savingsData.initialBalance) || 0) + totalContributions;
   const twentyKGoal = 20000;
+
+  // Calculate total noise cut value for dashboard forecast
+  const totalNoiseCutValue = noiseLifeData
+    .filter(item => item.type === 'noise')
+    .reduce((sum, item) => sum + parseFloat(item.dollarAmount || 0), 0);
+
+  // Calculate total *annual* income idea value for dashboard forecast
+  const totalAnnualIncomeIdeaValue = actionPlanData
+    .reduce((sum, item) => sum + (parseFloat(item.dollarAmount || 0)), 0); // Directly sum annual amounts
+
+  // Monthly saving goal from Emergency Fund (Step 2)
+  const monthlySavingGoal = parseFloat(savingsData.monthlySavingGoal || 0);
+
+  // Convert monthly components to annual for a true 1-year forecast sum
+  const annualSavingsFromNoise = totalNoiseCutValue * 12;
+  const annualSavingsFromMonthlyGoal = monthlySavingGoal * 12;
+
+  // Calculate 1-Year Forecasted Savings
+  const oneYearForecastedSavings = annualSavingsFromNoise + totalAnnualIncomeIdeaValue + annualSavingsFromMonthlyGoal;
+  const forecastedSavingsGoal = 10000; // Fixed target as requested
+
 
   return (
     <div className="p-6">
@@ -152,9 +177,24 @@ const Dashboard = ({ incomeData, expenseData, savingsData }) => {
 
       <div className="bg-white p-6 rounded-lg shadow-lg mb-8">
         <h3 className="text-2xl font-semibold text-gray-800 mb-4">Your First $20K Milestone</h3>
-        <ProgressBar current={currentSavings} target={twentyKGoal} label="Progress to $20,000" />
+        <ProgressBar current={currentTotalEmergencyFund} target={twentyKGoal} label="Progress to $20,000" />
         <p className="text-gray-600 mt-4 text-center">Keep building momentum! Every step brings you closer to financial freedom.</p>
-        </div>
+      </div>
+
+      <div className="bg-indigo-50 p-6 rounded-lg shadow-lg mb-8 border-t-4 border-indigo-600">
+        <h3 className="text-2xl font-semibold text-gray-800 mb-4">1-Year Forecasted Savings </h3>
+        <ProgressBar
+          current={oneYearForecastedSavings}
+          target={forecastedSavingsGoal} // Use the fixed goal here
+          label="Projected Savings for the next 12 months" // Updated label
+        />
+        <p className="text-gray-600 text-sm mt-2">
+          This forecast includes:
+          <br />• Annual savings from cutting 'noise' expenses: <span className="font-semibold text-green-700">{formatCurrency(annualSavingsFromNoise)}</span>
+          <br />• Annual income from new ideas: <span className="font-semibold text-green-700">{formatCurrency(totalAnnualIncomeIdeaValue)}</span>
+          <br />• Your annual intentional monthly savings goal: <span className="font-semibold text-green-700">{formatCurrency(annualSavingsFromMonthlyGoal)}</span>
+        </p>
+      </div>
     </div>
   );
 };
@@ -173,12 +213,11 @@ const MetricCard = ({ title, value, color, icon }) => (
 );
 
 
-// --- Sheet: Step 1 - Face Your Numbers ---
+// --- Sheet: Step 1 - Know Your Numbers ---
 const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
   const [newIncomeSource, setNewIncomeSource] = useState('');
   const [newIncomeAmount, setNewIncomeAmount] = useState('');
   const [newExpenseCategory, setNewExpenseCategory] = useState('');
-  const [newExpenseDescription, setNewExpenseDescription] = useState('');
   const [newExpenseAmount, setNewExpenseAmount] = useState('');
 
   // State for editing income and expenses
@@ -187,7 +226,6 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
   const [editIncomeSource, setEditIncomeSource] = useState('');
   const [editIncomeAmount, setEditIncomeAmount] = useState('');
   const [editExpenseCategory, setEditExpenseCategory] = useState('');
-  const [editExpenseDescription, setEditExpenseDescription] = useState('');
   const [editExpenseAmount, setEditExpenseAmount] = useState('');
 
 
@@ -222,9 +260,8 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
 
   const handleAddExpense = () => {
     if (newExpenseCategory && newExpenseAmount) {
-      setExpenseData([...expenseData, { id: generateId(), category: newExpenseCategory, description: newExpenseDescription, amount: parseFloat(newExpenseAmount) }]);
+      setExpenseData([...expenseData, { id: generateId(), category: newExpenseCategory, amount: parseFloat(newExpenseAmount) }]);
       setNewExpenseCategory('');
-      setNewExpenseDescription('');
       setNewExpenseAmount('');
     }
   };
@@ -236,13 +273,12 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
   const handleEditExpense = (item) => {
     setEditingExpenseId(item.id);
     setEditExpenseCategory(item.category);
-    setEditExpenseDescription(item.description);
     setEditExpenseAmount(item.amount);
   };
 
   const handleSaveEditedExpense = (id) => {
     setExpenseData(expenseData.map(item => 
-      item.id === id ? { ...item, category: editExpenseCategory, description: editExpenseDescription, amount: parseFloat(editExpenseAmount) } : item
+      item.id === id ? { ...item, category: editExpenseCategory, amount: parseFloat(editExpenseAmount) } : item
     ));
     setEditingExpenseId(null);
   };
@@ -278,11 +314,11 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
 
   return (
     <div className="p-6">
-      <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">1. Face Your Numbers</h2>
+      <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">1. Know Your Numbers</h2>
       <p className="text-gray-600 mb-8 text-center max-w-2xl mx-auto">
-        "Be diligent to know the state of your flocks, and attend to your herds." <br/> **Proverbs 27:23**
-        Clarity is the first step to freedom.
-        Track your income and spending to spot money leaks and create realistic savings targets.
+        "Be diligent to know the state of your flocks, and attend to your herds." Proverbs 27:23
+        <br />
+        Clarity is the first step to freedom. Track your income and spending to spot money leaks and create realistic savings targets.
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
@@ -298,7 +334,7 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
             />
             <input
               type="number"
-              placeholder="Amount"
+              placeholder="Monthly Amount"
               value={newIncomeAmount}
               onChange={(e) => setNewIncomeAmount(e.target.value)}
               className="p-3 border border-gray-300 rounded-md w-full md:w-auto focus:ring-green-500 focus:border-green-500"
@@ -311,20 +347,22 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
             </button>
           </div>
 
-          <div className="max-h-60 overflow-y-auto mb-4 border border-green-200 rounded-md">
-            {incomeData.length === 0 ? (
-              <p className="text-gray-500 text-center p-4">No income recorded yet.</p>
-            ) : (
-              <table className="min-w-full bg-white text-sm">
-                <thead className="sticky top-0 bg-green-100">
-                  <tr>
-                    <th className="py-2 px-4 text-left text-green-800">Source</th>
-                    <th className="py-2 px-4 text-left text-green-800">Amount</th>
-                    <th className="py-2 px-4 text-left text-green-800">Actions</th> {/* Added Actions column */}
+          <div className="max-h-60 overflow-y-auto overflow-x-auto mb-4 border border-green-200 rounded-md">
+            <table className="min-w-full bg-white text-sm">
+              <thead className="sticky top-0 bg-green-100">
+                <tr>
+                  <th className="py-2 px-4 text-left text-green-800">Source</th>
+                  <th className="py-2 px-4 text-left text-green-800">Amount</th>
+                  <th className="py-2 px-4 text-left text-green-800">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {incomeData.length === 0 ? (
+                  <tr className="border-b border-green-100 last:border-0">
+                    <td colSpan="3" className="text-gray-500 text-center p-4">No income recorded yet.</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {incomeData.map((item) => (
+                ) : (
+                  incomeData.map((item) => (
                     <tr key={item.id} className="border-b border-green-100 last:border-0">
                       {editingIncomeId === item.id ? (
                         <>
@@ -344,26 +382,26 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
                               className="p-1 border border-gray-300 rounded-md w-full"
                             />
                           </td>
-                          <td className="py-2 px-4 flex gap-2">
-                            <button onClick={() => handleSaveEditedIncome(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
-                            <button onClick={handleCancelEditIncome} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                          <td className="py-2 px-4 flex gap-1 items-center">
+                            <button onClick={() => handleSaveEditedIncome(item.id)} className="text-green-600 hover:text-green-800 text-xs py-1 px-2 rounded">Save</button>
+                            <button onClick={handleCancelEditIncome} className="text-gray-600 hover:text-gray-800 text-xs py-1 px-2 rounded">Cancel</button>
                           </td>
                         </>
                       ) : (
                         <>
                           <td className="py-2 px-4">{item.source}</td>
                           <td className="py-2 px-4">{formatCurrency(item.amount)}</td>
-                          <td className="py-2 px-4 flex gap-2">
-                            <button onClick={() => handleEditIncome(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                            <button onClick={() => handleRemoveIncome(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                          <td className="py-2 px-4 flex gap-1 items-center">
+                            <button onClick={() => handleEditIncome(item)} className="text-blue-600 hover:text-blue-800 text-xs py-1 px-2 rounded">Edit</button>
+                            <button onClick={() => handleRemoveIncome(item.id)} className="text-red-600 hover:text-red-800 text-xs py-1 px-2 rounded">Remove</button>
                           </td>
                         </>
                       )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
           <p className="text-xl font-bold text-green-800 text-right mt-4">Total Income: {formatCurrency(totalIncome)}</p>
         </div>
@@ -379,18 +417,11 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
               className="p-3 border border-gray-300 rounded-md flex-grow focus:ring-red-500 focus:border-red-500"
             />
             <input
-              type="text"
-              placeholder="Description (Optional)"
-              value={newExpenseDescription}
-              onChange={(e) => setNewExpenseDescription(e.target.value)}
-              className="p-3 border border-gray-300 rounded-md flex-grow focus:ring-red-500 focus:border-red-500"
-            />
-            <input
               type="number"
-              placeholder="Amount"
+              placeholder="Monthly Amount"
               value={newExpenseAmount}
               onChange={(e) => setNewExpenseAmount(e.target.value)}
-              className="p-3 border border-gray-300 rounded-md w-full md:w-32 focus:ring-red-500 focus:border-red-500" /* Adjusted width */
+              className="p-3 border border-gray-300 rounded-md w-full md:w-auto focus:ring-red-500 focus:border-red-500"
             />
             <button
               onClick={handleAddExpense}
@@ -400,21 +431,22 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
             </button>
           </div>
 
-          <div className="max-h-60 overflow-y-auto mb-4 border border-red-200 rounded-md">
-            {expenseData.length === 0 ? (
-              <p className="text-gray-500 text-center p-4">No expenses recorded yet.</p>
-            ) : (
-              <table className="min-w-full bg-white text-sm">
-                <thead className="sticky top-0 bg-red-100">
-                  <tr>
-                    <th className="py-2 px-4 text-left text-red-800">Category</th>
-                    <th className="py-2 px-4 text-left text-red-800">Description</th>
-                    <th className="py-2 px-4 text-left text-red-800">Amount</th>
-                    <th className="py-2 px-4 text-left text-red-800">Actions</th> {/* Added Actions column */}
+          <div className="max-h-60 overflow-y-auto overflow-x-auto mb-4 border border-red-200 rounded-md">
+            <table className="min-w-full bg-white text-sm">
+              <thead className="sticky top-0 bg-red-100">
+                <tr>
+                  <th className="py-2 px-4 text-left text-red-800">Category</th>
+                  <th className="py-2 px-4 text-left text-red-800">Amount</th>
+                  <th className="py-2 px-4 text-left text-red-800">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {expenseData.length === 0 ? (
+                  <tr className="border-b border-red-100 last:border-0">
+                    <td colSpan="3" className="text-gray-500 text-center p-4">No expenses recorded yet.</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {expenseData.map((item) => (
+                ) : (
+                  expenseData.map((item) => (
                     <tr key={item.id} className="border-b border-red-100 last:border-0">
                       {editingExpenseId === item.id ? (
                         <>
@@ -428,41 +460,32 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
                           </td>
                           <td className="py-2 px-4">
                             <input
-                              type="text"
-                              value={editExpenseDescription}
-                              onChange={(e) => setEditExpenseDescription(e.target.value)}
-                              className="p-1 border border-gray-300 rounded-md w-full"
-                            />
-                          </td>
-                          <td className="py-2 px-4">
-                            <input
                               type="number"
                               value={editExpenseAmount}
                               onChange={(e) => setEditExpenseAmount(e.target.value)}
                               className="p-1 border border-gray-300 rounded-md w-full"
                             />
                           </td>
-                          <td className="py-2 px-4 flex gap-2">
-                            <button onClick={() => handleSaveEditedExpense(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
-                            <button onClick={handleCancelEditExpense} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                          <td className="py-2 px-4 flex gap-1 items-center">
+                            <button onClick={() => handleSaveEditedExpense(item.id)} className="text-green-600 hover:text-green-800 text-xs py-1 px-2 rounded">Save</button>
+                            <button onClick={handleCancelEditExpense} className="text-gray-600 hover:text-gray-800 text-xs py-1 px-2 rounded">Cancel</button>
                           </td>
                         </>
                       ) : (
                         <>
                           <td className="py-2 px-4">{item.category}</td>
-                          <td className="py-2 px-4">{item.description}</td>
                           <td className="py-2 px-4">{formatCurrency(item.amount)}</td>
-                          <td className="py-2 px-4 flex gap-2">
-                            <button onClick={() => handleEditExpense(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                            <button onClick={() => handleRemoveExpense(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                          <td className="py-2 px-4 flex gap-1 items-center">
+                            <button onClick={() => handleEditExpense(item)} className="text-blue-600 hover:text-blue-800 text-xs py-1 px-2 rounded">Edit</button>
+                            <button onClick={() => handleRemoveExpense(item.id)} className="text-red-600 hover:text-red-800 text-xs py-1 px-2 rounded">Remove</button>
                           </td>
                         </>
                       )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
           <p className="text-xl font-bold text-red-800 text-right mt-4">Total Expenses: {formatCurrency(totalExpenses)}</p>
         </div>
@@ -470,6 +493,9 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
 
       <div className="bg-white p-6 rounded-lg shadow-lg border-t-4 border-purple-600 mt-8">
         <h3 className="text-2xl font-bold text-purple-800 mb-4 flex items-center"><Target className="mr-2" /> Potential Money Leaks (Expenses Under $200)</h3>
+        <p className="text-gray-700 mb-4">
+          These are expenses you may want to consider cutting or reducing to boost your savings.
+        </p>
         {sortedMoneyLeakCategories.length === 0 ? (
           <p className="text-gray-500 text-center p-4">No expenses under $200 recorded yet. Add some to spot potential leaks!</p>
         ) : (
@@ -496,29 +522,75 @@ const Step1 = ({ incomeData, setIncomeData, expenseData, setExpenseData }) => {
 
 
 // --- Sheet: Step 2 - Build Your Emergency Fund ---
-const Step2 = ({ savingsData, setSavingsData, savingsMethods, setSavingsMethods }) => {
-  const [newFundAmount, setNewFundAmount] = useState('');
-  // Use a local state for the input field, initialized from props, and updated when props change
+const Step2 = ({ savingsData, setSavingsData, savingsMethods, setSavingsMethods, emergencyFundContributions, setEmergencyFundContributions, netSavings }) => {
+  const [newContributionAmount, setNewContributionAmount] = useState('');
+  const [newContributionDate, setNewContributionDate] = useState('');
   const [newGoalAmount, setNewGoalAmount] = useState(savingsData.emergencyFundGoal);
+  const [newMonthlySavingGoal, setNewMonthlySavingGoal] = useState(savingsData.monthlySavingGoal);
+  const [newInitialBalance, setNewInitialBalance] = useState(savingsData.initialBalance);
 
-  // Effect to sync newGoalAmount with savingsData.emergencyFundGoal if it changes externally
+  // State for editing contributions
+  const [editingContributionId, setEditingContributionId] = useState(null);
+  const [editContributionAmount, setEditContributionAmount] = useState('');
+  const [editContributionDate, setEditContributionDate] = useState('');
+
+  // Effect to sync goals and initial balance with savingsData if it changes externally
   useEffect(() => {
     setNewGoalAmount(savingsData.emergencyFundGoal);
-  }, [savingsData.emergencyFundGoal]);
+    setNewMonthlySavingGoal(savingsData.monthlySavingGoal);
+    setNewInitialBalance(savingsData.initialBalance);
+  }, [savingsData.emergencyFundGoal, savingsData.monthlySavingGoal, savingsData.initialBalance]);
 
 
-  const handleUpdateFund = () => {
-    const amount = parseFloat(newFundAmount);
-    if (!isNaN(amount)) {
-      setSavingsData(prev => ({ ...prev, emergencyFund: amount }));
-      setNewFundAmount('');
+  const handleAddContribution = () => {
+    const amount = parseFloat(newContributionAmount);
+    if (!isNaN(amount) && newContributionDate) {
+      const newContribution = { id: generateId(), amount, date: newContributionDate };
+      setEmergencyFundContributions(prev => [...prev, newContribution]);
+      setNewContributionAmount('');
+      setNewContributionDate('');
     }
+  };
+
+  const handleRemoveContribution = (id) => {
+    setEmergencyFundContributions(emergencyFundContributions.filter(item => item.id !== id));
+  };
+
+  const handleEditContribution = (item) => {
+    setEditingContributionId(item.id);
+    setEditContributionAmount(item.amount);
+    setEditContributionDate(item.date);
+  };
+
+  const handleSaveEditedContribution = (id) => {
+    setEmergencyFundContributions(emergencyFundContributions.map(item =>
+      item.id === id ? { ...item, amount: parseFloat(editContributionAmount), date: editContributionDate } : item
+    ));
+    setEditingContributionId(null);
+  };
+
+  const handleCancelEditContribution = () => {
+    setEditingContributionId(null);
   };
 
   const handleUpdateGoal = () => {
     const goal = parseFloat(newGoalAmount);
     if (!isNaN(goal) && goal > 0) {
       setSavingsData(prev => ({ ...prev, emergencyFundGoal: goal }));
+    }
+  };
+
+  const handleUpdateMonthlySavingGoal = () => {
+    const goal = parseFloat(newMonthlySavingGoal);
+    if (!isNaN(goal) && goal >= 0) {
+      setSavingsData(prev => ({ ...prev, monthlySavingGoal: goal }));
+    }
+  };
+
+  const handleUpdateInitialBalance = () => {
+    const balance = parseFloat(newInitialBalance);
+    if (!isNaN(balance) && balance >= 0) {
+      setSavingsData(prev => ({ ...prev, initialBalance: balance }));
     }
   };
 
@@ -530,48 +602,37 @@ const Step2 = ({ savingsData, setSavingsData, savingsMethods, setSavingsMethods 
     );
   };
 
+  // Calculate total emergency fund balance
+  const totalContributions = emergencyFundContributions.reduce((sum, item) => sum + item.amount, 0);
+  const totalEmergencyFundBalance = (parseFloat(savingsData.initialBalance) || 0) + totalContributions;
+
+  // Calculate recommended monthly savings based on netSavings from dashboard
+  const recommendedMonthlySavings = netSavings ? netSavings / 12 : 0;
+
+
   return (
     <div className="p-6">
       <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">2. Build Your Emergency Fund</h2>
       <p className="text-gray-600 mb-8 text-center max-w-2xl mx-auto">
-        "The wise store up choice food and olive oil, but fools gulp theirs down." <br/> **Proverbs 21:20**
-        Your emergency fund is your ark,
-        preparing you for the unexpected and dramatically lowering stress.
+        "The wise store up choice food and olive oil, but fools gulp theirs down." Proverbs 21:20
+        <br />
+        Your emergency fund is your ark, preparing you for the unexpected and dramatically lowering stress.
       </p>
 
       <div className="bg-blue-50 p-6 rounded-lg shadow-md border-t-4 border-blue-600 mb-8">
         <h3 className="text-2xl font-bold text-blue-800 mb-4 flex items-center"><Shield className="mr-2" /> Emergency Fund Progress</h3>
         <ProgressBar
-          current={savingsData.emergencyFund}
+          current={totalEmergencyFundBalance}
           target={savingsData.emergencyFundGoal}
-          label="Emergency Fund Balance"
+          label="Total Fund Balance"
         />
         <div className="mt-6 p-4 bg-blue-100 rounded-md text-blue-800 flex items-center gap-3">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ship"><path d="M2 20h20"></path><path d="M6 19c0-1.7.3-3.4 1-5 .8-1.9 2-3.6 3.5-4.9c1.5-1.3 3.3-2 5.2-2.1 1.3-.1 2.6.2 3.8.7L22 7c0 3.1.9 6.2 2 9.2c.5 1.7 1 3.4 1 5h-21"></path><path d="M18 20a2 2 0 0 0 2-2V7l-4-3-6 5-4-3-2 3v7c0 1.7.3 3.4 1 5h15Z"></path></svg> {/* Simple Ark-like SVG */}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-ship"><path d="M2 20h20"></path><path d="M6 19c0-1.7.3-3.4 1-5 .8-1.9 2-3.6 3.5-4.9c1.5-1.3 3.3-2 5.2-2.1 1.3-.1 2.6.2 3.8.7L22 7c0 3.1.9 6.2 2 9.2c.5 1.7 1 3.4 1 5h-21"></path><path d="M18 20a2 0 0 0 2-2V7l-4-3-6 5-4-3-2 3v7c0 1.7.3 3.4 1 5h15Z"></path></svg> {/* Simple Ark-like SVG */}
           <p className="font-semibold">Think of this as your ark moment, like Noah preparing for the flood. Your emergency fund is your ark.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white p-6 rounded-lg shadow-md border-b-4 border-gray-300">
-          <h3 className="text-xl font-semibold text-gray-800 mb-4">Update Your Fund</h3>
-          <div className="flex flex-col gap-4">
-            <input
-              type="number"
-              placeholder="Current Fund Amount"
-              value={newFundAmount}
-              onChange={(e) => setNewFundAmount(e.target.value)}
-              className="p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-            />
-            <button
-              onClick={handleUpdateFund}
-              className="px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition-all duration-200 shadow-md"
-            >
-              Update Fund Balance
-            </button>
-          </div>
-        </div>
-
         <div className="bg-white p-6 rounded-lg shadow-md border-b-4 border-gray-300">
           <h3 className="text-xl font-semibold text-gray-800 mb-4">Set Emergency Fund Goal</h3>
           <div className="flex flex-col gap-4">
@@ -591,7 +652,139 @@ const Step2 = ({ savingsData, setSavingsData, savingsMethods, setSavingsMethods 
           </div>
           <p className="text-sm text-gray-500 mt-4">Current Goal: {formatCurrency(savingsData.emergencyFundGoal)}</p>
         </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md border-b-4 border-gray-300">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Set Monthly Savings Goal</h3>
+          <p className="text-gray-700 mb-2">Your current goal: <span className="font-bold">{formatCurrency(savingsData.monthlySavingGoal)}</span></p>
+          {netSavings !== undefined && recommendedMonthlySavings > 0 && (
+            <p className="text-blue-600 font-semibold mb-4">
+              Recommended based on Net Savings: {formatCurrency(recommendedMonthlySavings)}/month
+            </p>
+          )}
+          <div className="flex flex-col gap-4">
+            <input
+              type="number"
+              placeholder="Target monthly savings amount"
+              value={newMonthlySavingGoal}
+              onChange={(e) => setNewMonthlySavingGoal(e.target.value)}
+              className="p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            />
+            <button
+              onClick={handleUpdateMonthlySavingGoal}
+              className="px-6 py-3 bg-teal-600 text-white font-semibold rounded-md hover:bg-teal-700 transition-all duration-200 shadow-md"
+            >
+              Set Monthly Goal
+            </button>
+          </div>
+        </div>
       </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-purple-600 mb-8">
+        <h3 className="text-2xl font-bold text-purple-800 mb-4 flex items-center"><DollarSign className="mr-2" /> Current Initial Fund Balance</h3>
+        <p className="text-gray-700 mb-4">Enter how much you currently have saved in your emergency fund.</p>
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <input
+            type="number"
+            placeholder="Initial Amount"
+            value={newInitialBalance}
+            onChange={(e) => setNewInitialBalance(e.target.value)}
+            className="p-3 border border-gray-300 rounded-md flex-grow focus:ring-purple-500 focus:border-purple-500"
+          />
+          <button
+            onClick={handleUpdateInitialBalance}
+            className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-md hover:bg-purple-700 transition-all duration-200 shadow-md"
+          >
+            Update Initial Balance
+          </button>
+        </div>
+        <p className="text-xl font-bold text-purple-800 text-right mt-4">Initial Balance: {formatCurrency(savingsData.initialBalance)}</p>
+      </div>
+
+      <div className="bg-white p-6 rounded-lg shadow-md border-t-4 border-emerald-600 mb-8">
+        <h3 className="text-2xl font-bold text-emerald-800 mb-4 flex items-center"><DollarSign className="mr-2" /> Record Emergency Fund Contributions</h3>
+        <p className="text-gray-700 mb-4">Add each time you save to your emergency fund.</p>
+        <div className="flex flex-col md:flex-row gap-4 mb-4">
+          <input
+            type="number"
+            placeholder="Amount"
+            value={newContributionAmount}
+            onChange={(e) => setNewContributionAmount(e.target.value)}
+            className="p-3 border border-gray-300 rounded-md flex-grow focus:ring-emerald-500 focus:border-emerald-500"
+          />
+          <input
+            type="date"
+            value={newContributionDate}
+            onChange={(e) => setNewContributionDate(e.target.value)}
+            className="p-3 border border-gray-300 rounded-md flex-grow focus:ring-emerald-500 focus:border-emerald-500"
+          />
+          <button
+            onClick={handleAddContribution}
+            className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-md hover:bg-emerald-700 transition-all duration-200 shadow-md"
+          >
+            Add Contribution
+          </button>
+        </div>
+
+        <div className="max-h-60 overflow-y-auto overflow-x-auto mb-4 border border-emerald-200 rounded-md">
+          <table className="min-w-full bg-white text-sm">
+            <thead className="sticky top-0 bg-emerald-100">
+              <tr>
+                <th className="py-2 px-4 text-left text-emerald-800">Date</th>
+                <th className="py-2 px-4 text-left text-emerald-800">Amount</th>
+                <th className="py-2 px-4 text-left text-emerald-800">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {emergencyFundContributions.length === 0 ? (
+                <tr className="border-b border-emerald-100 last:border-0">
+                  <td colSpan="3" className="text-gray-500 text-center p-4">No contributions recorded yet.</td>
+                </tr>
+              ) : (
+                emergencyFundContributions.map((item) => (
+                  <tr key={item.id} className="border-b border-emerald-100 last:border-0">
+                    {editingContributionId === item.id ? (
+                      <>
+                        <td className="py-2 px-4">
+                          <input
+                            type="date"
+                            value={editContributionDate}
+                            onChange={(e) => setEditContributionDate(e.target.value)}
+                            className="p-1 border border-gray-300 rounded-md w-full"
+                          />
+                        </td>
+                        <td className="py-2 px-4">
+                          <input
+                            type="number"
+                            value={editContributionAmount}
+                            onChange={(e) => setEditContributionAmount(e.target.value)}
+                            className="p-1 border border-gray-300 rounded-md w-full"
+                          />
+                        </td>
+                        <td className="py-2 px-4 flex gap-1 items-center">
+                          <button onClick={() => handleSaveEditedContribution(item.id)} className="text-green-600 hover:text-green-800 text-xs py-1 px-2 rounded">Save</button>
+                          <button onClick={handleCancelEditContribution} className="text-gray-600 hover:text-gray-800 text-xs py-1 px-2 rounded">Cancel</button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="py-2 px-4">{item.date}</td>
+                        <td className="py-2 px-4">{formatCurrency(item.amount)}</td>
+                        <td className="py-2 px-4 flex gap-1 items-center">
+                          <button onClick={() => handleEditContribution(item)} className="text-blue-600 hover:text-blue-800 text-xs py-1 px-2 rounded">Edit</button>
+                          <button onClick={() => handleRemoveContribution(item.id)} className="text-red-600 hover:text-red-800 text-xs py-1 px-2 rounded">Remove</button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-xl font-bold text-emerald-800 text-right mt-4">Total Contributions: {formatCurrency(totalContributions)}</p>
+        <p className="text-2xl font-extrabold text-blue-800 text-right mt-4">Total Fund Balance: {formatCurrency(totalEmergencyFundBalance)}</p>
+      </div>
+
 
       <div className="mt-10 p-6 bg-yellow-50 rounded-lg shadow-md border-t-4 border-yellow-600 mb-8">
         <h3 className="text-2xl font-bold text-yellow-800 mb-4">Practical Tip</h3>
@@ -617,6 +810,17 @@ const Step2 = ({ savingsData, setSavingsData, savingsMethods, setSavingsMethods 
               />
               <p className={`text-sm flex-grow ${method.checked ? 'text-gray-600 line-through' : 'text-gray-800'}`}>
                 {method.text}
+                {method.url && (
+                  <a
+                    href={method.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 inline-flex items-center text-blue-600 hover:text-blue-800 hover:underline text-xs px-2 py-1 bg-blue-50 rounded-full"
+                    onClick={(e) => e.stopPropagation()} // Prevent checkbox toggle when clicking link
+                  >
+                    Visit Link <ArrowRightCircle size={12} className="ml-1" />
+                  </a>
+                )}
               </p>
             </div>
           ))}
@@ -696,9 +900,9 @@ const Step3 = ({ automationData, setAutomationData, challengeProgress, setChalle
     <div className="p-6">
       <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">3. Automate Your Obedience</h2>
       <p className="text-gray-600 mb-8 text-center max-w-2xl mx-auto">
-        "Whoever can be trusted with very little can also be trusted with much." <br/> **Luke 16:10**
-        Consistency beats motivation.
-        Set up systems to move money automatically, like God's manna in the wilderness.
+        "Whoever can be trusted with very little can also be trusted with much." Luke 16:10
+        <br />
+        Consistency beats motivation. Set up systems to move money automatically, like God's manna in the wilderness.
       </p>
 
       <div className="bg-indigo-50 p-6 rounded-lg shadow-md border-t-4 border-indigo-600 mb-8">
@@ -727,21 +931,23 @@ const Step3 = ({ automationData, setAutomationData, challengeProgress, setChalle
           </button>
         </div>
 
-        <div className="max-h-60 overflow-y-auto mb-4 border border-indigo-200 rounded-md">
-            {automationData.length === 0 ? (
-              <p className="text-gray-500 text-center p-4">No custom automation plans set up yet.</p>
-            ) : (
-              <table className="min-w-full bg-white text-sm">
-                <thead className="sticky top-0 bg-indigo-100">
-                  <tr>
-                    <th className="py-2 px-4 text-left text-indigo-800">Method</th>
-                    <th className="py-2 px-4 text-left text-indigo-800">Amount/Frequency</th>
-                    <th className="py-2 px-4 text-left text-indigo-800">Status</th>
-                    <th className="py-2 px-4 text-left text-indigo-800">Actions</th>
+        <div className="max-h-60 overflow-y-auto overflow-x-auto mb-4 border border-indigo-200 rounded-md">
+            <table className="min-w-full bg-white text-sm">
+              <thead className="sticky top-0 bg-indigo-100">
+                <tr>
+                  <th className="py-2 px-4 text-left text-indigo-800">Method</th>
+                  <th className="py-2 px-4 text-left text-indigo-800">Amount/Frequency</th>
+                  <th className="py-2 px-4 text-left text-indigo-800">Status</th>
+                  <th className="py-2 px-4 text-left text-indigo-800">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {automationData.length === 0 ? (
+                  <tr className="border-b border-indigo-100 last:border-0">
+                    <td colSpan="4" className="text-gray-500 text-center p-4">No custom automation plans set up yet.</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {automationData.map((item) => (
+                ) : (
+                  automationData.map((item) => (
                     <tr key={item.id} className="border-b border-indigo-100 last:border-0">
                       {editingAutomationId === item.id ? (
                         <>
@@ -771,9 +977,9 @@ const Step3 = ({ automationData, setAutomationData, challengeProgress, setChalle
                               <option value="Planned">Planned</option>
                             </select>
                           </td>
-                          <td className="py-2 px-4 flex gap-2">
-                            <button onClick={() => handleSaveEditedAutomation(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
-                            <button onClick={handleCancelEditAutomation} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                          <td className="py-2 px-4 flex gap-1 items-center">
+                            <button onClick={() => handleSaveEditedAutomation(item.id)} className="text-green-600 hover:text-green-800 text-xs py-1 px-2 rounded">Save</button>
+                            <button onClick={handleCancelEditAutomation} className="text-gray-600 hover:text-gray-800 text-xs py-1 px-2 rounded">Cancel</button>
                           </td>
                         </>
                       ) : (
@@ -783,17 +989,17 @@ const Step3 = ({ automationData, setAutomationData, challengeProgress, setChalle
                           <td className={`py-2 px-4 font-semibold ${item.status === 'Active' ? 'text-green-600' : 'text-yellow-600'}`}>
                             {item.status}
                           </td>
-                          <td className="py-2 px-4 flex gap-2">
-                            <button onClick={() => handleEditAutomation(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                            <button onClick={() => handleRemoveAutomation(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                          <td className="py-2 px-4 flex gap-1 items-center">
+                            <button onClick={() => handleEditAutomation(item)} className="text-blue-600 hover:text-blue-800 text-xs py-1 px-2 rounded">Edit</button>
+                            <button onClick={() => handleRemoveAutomation(item.id)} className="text-red-600 hover:text-red-800 text-xs py-1 px-2 rounded">Remove</button>
                           </td>
                         </>
                       )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
         </div>
       </div>
 
@@ -850,18 +1056,21 @@ const Step3 = ({ automationData, setAutomationData, challengeProgress, setChalle
 // --- Sheet: Step 4 - Cut Noise, Not Life ---
 const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
   const [newItem, setNewItem] = useState('');
+  const [newItemAmount, setNewItemAmount] = useState('');
   const [isNoise, setIsNoise] = useState(true);
 
   // State for editing noise/life items
   const [editingNoiseLifeId, setEditingNoiseLifeId] = useState(null);
   const [editNoiseLifeItem, setEditNoiseLifeItem] = useState('');
+  const [editNoiseLifeAmount, setEditNoiseLifeAmount] = useState('');
   const [editNoiseLifeType, setEditNoiseLifeType] = useState(true); // true for noise, false for life
 
 
-  const handleAddItem = () => { // Corrected function name
-    if (newItem) {
-      setNoiseLifeData([...noiseLifeData, { id: generateId(), item: newItem, type: isNoise ? 'noise' : 'life' }]);
+  const handleAddItem = () => {
+    if (newItem && newItemAmount) {
+      setNoiseLifeData([...noiseLifeData, { id: generateId(), item: newItem, type: isNoise ? 'noise' : 'life', dollarAmount: parseFloat(newItemAmount) }]);
       setNewItem('');
+      setNewItemAmount('');
     }
   };
 
@@ -872,12 +1081,13 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
   const handleEditNoiseLife = (item) => {
     setEditingNoiseLifeId(item.id);
     setEditNoiseLifeItem(item.item);
+    setEditNoiseLifeAmount(item.dollarAmount);
     setEditNoiseLifeType(item.type === 'noise');
   };
 
   const handleSaveEditedNoiseLife = (id) => {
     setNoiseLifeData(noiseLifeData.map(item =>
-      item.id === id ? { ...item, item: editNoiseLifeItem, type: editNoiseLifeType ? 'noise' : 'life' } : item
+      item.id === id ? { ...item, item: editNoiseLifeItem, type: editNoiseLifeType ? 'noise' : 'life', dollarAmount: parseFloat(editNoiseLifeAmount) } : item
     ));
     setEditingNoiseLifeId(null);
   };
@@ -891,9 +1101,9 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
     <div className="p-6">
       <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">4. Cut Noise, Not Life</h2>
       <p className="text-gray-600 mb-8 text-center max-w-2xl mx-auto">
-        "Every person should eat, drink, and find satisfaction in the good of their labor because it is a gift from God." <br/> **Ecclesiastes 3:13**
-        Saving isn't punishment; it's alignment.
-        Cut the noise that doesn’t add value, but keep what truly matters.
+        "Every person should eat, drink, and find satisfaction in the good of their labor because it is a gift from God." Ecclesiastes 3:13
+        <br />
+        Saving isn't punishment; it's alignment. Cut the noise that doesn’t add value, but keep what truly matters.
       </p>
 
       <div className="bg-orange-50 p-6 rounded-lg shadow-md border-t-4 border-orange-600 mb-8">
@@ -901,10 +1111,17 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
         <div className="flex flex-col md:flex-row gap-4 mb-4 items-center">
           <input
             type="text"
-            placeholder="Item (e.g., Unused subscription, Gym membership)"
+            placeholder="Item (e.g., Unused subscription)"
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
             className="p-3 border border-gray-300 rounded-md flex-grow focus:ring-orange-500 focus:border-orange-500"
+          />
+          <input
+            type="number"
+            placeholder="Amount ($)"
+            value={newItemAmount}
+            onChange={(e) => setNewItemAmount(e.target.value)}
+            className="p-3 border border-gray-300 rounded-md w-full md:w-auto focus:ring-orange-500 focus:border-orange-500" /* Changed to md:w-auto */
           />
           <div className="flex items-center gap-4">
             <label className="flex items-center">
@@ -946,7 +1163,7 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
                 {noiseLifeData.filter(item => item.type === 'noise').map((item) => (
                   <li key={item.id} className="flex items-center justify-between text-gray-700 bg-red-50 p-2 rounded-md">
                     {editingNoiseLifeId === item.id && item.type === 'noise' ? (
-                      <div className="flex flex-grow items-center gap-2">
+                      <div className="flex flex-grow items-center gap-1">
                         <XCircle size={18} className="text-red-500" />
                         <input
                           type="text"
@@ -954,16 +1171,22 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
                           onChange={(e) => setEditNoiseLifeItem(e.target.value)}
                           className="p-1 border border-gray-300 rounded-md flex-grow"
                         />
-                        <button onClick={() => handleSaveEditedNoiseLife(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
-                        <button onClick={handleCancelEditNoiseLife} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                        <input
+                          type="number"
+                          value={editNoiseLifeAmount}
+                          onChange={(e) => setEditNoiseLifeAmount(e.target.value)}
+                          className="p-1 border border-gray-300 rounded-md w-16 text-xs"
+                        />
+                        <button onClick={() => handleSaveEditedNoiseLife(item.id)} className="text-green-600 hover:text-green-800 text-xs py-1 px-2 rounded">Save</button>
+                        <button onClick={handleCancelEditNoiseLife} className="text-gray-600 hover:text-gray-800 text-xs py-1 px-2 rounded">Cancel</button>
                       </div>
                     ) : (
-                      <span className="flex items-center gap-2"><XCircle size={18} className="text-red-500" /> {item.item}</span>
+                      <span className="flex items-center gap-2"><XCircle size={18} className="text-red-500" /> {item.item} ({formatCurrency(item.dollarAmount)})</span>
                     )}
                     {editingNoiseLifeId !== item.id && (
-                      <div className="flex gap-2">
-                        <button onClick={() => handleEditNoiseLife(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                        <button onClick={() => removeItem(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                      <div className="flex gap-1 items-center">
+                        <button onClick={() => handleEditNoiseLife(item)} className="text-blue-600 hover:text-blue-800 text-xs py-1 px-2 rounded">Edit</button>
+                        <button onClick={() => removeItem(item.id)} className="text-red-600 hover:text-red-800 text-xs py-1 px-2 rounded">Remove</button>
                       </div>
                     )}
                   </li>
@@ -981,7 +1204,7 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
                 {noiseLifeData.filter(item => item.type === 'life').map((item) => (
                   <li key={item.id} className="flex items-center justify-between text-gray-700 bg-green-50 p-2 rounded-md">
                     {editingNoiseLifeId === item.id && item.type === 'life' ? (
-                      <div className="flex flex-grow items-center gap-2">
+                      <div className="flex flex-grow items-center gap-1">
                         <CheckCircle size={18} className="text-green-500" />
                         <input
                           type="text"
@@ -989,16 +1212,22 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
                           onChange={(e) => setEditNoiseLifeItem(e.target.value)}
                           className="p-1 border border-gray-300 rounded-md flex-grow"
                         />
-                        <button onClick={() => handleSaveEditedNoiseLife(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
-                        <button onClick={handleCancelEditNoiseLife} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                        <input
+                          type="number"
+                          value={editNoiseLifeAmount}
+                          onChange={(e) => setEditNoiseLifeAmount(e.target.value)}
+                          className="p-1 border border-gray-300 rounded-md w-16 text-xs"
+                        />
+                        <button onClick={() => handleSaveEditedNoiseLife(item.id)} className="text-green-600 hover:text-green-800 text-xs py-1 px-2 rounded">Save</button>
+                        <button onClick={handleCancelEditNoiseLife} className="text-gray-600 hover:text-gray-800 text-xs py-1 px-2 rounded">Cancel</button>
                       </div>
                     ) : (
-                      <span className="flex items-center gap-2"><CheckCircle size={18} className="text-green-500" /> {item.item}</span>
+                      <span className="flex items-center gap-2"><CheckCircle size={18} className="text-green-500" /> {item.item} ({formatCurrency(item.dollarAmount)})</span>
                     )}
                     {editingNoiseLifeId !== item.id && (
-                      <div className="flex gap-2">
-                        <button onClick={() => handleEditNoiseLife(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                        <button onClick={() => removeItem(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                      <div className="flex gap-1 items-center">
+                        <button onClick={() => handleEditNoiseLife(item)} className="text-blue-600 hover:text-blue-800 text-xs py-1 px-2 rounded">Edit</button>
+                        <button onClick={() => removeItem(item.id)} className="text-red-600 hover:text-red-800 text-xs py-1 px-2 rounded">Remove</button>
                       </div>
                     )}
                   </li>
@@ -1023,52 +1252,55 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
 const Step5 = ({ actionPlanData, setActionPlanData, totalIncome, prayerCalendar, setPrayerCalendar }) => {
   const [newActionStep, setNewActionStep] = useState('');
   const [newActionTimeline, setNewActionTimeline] = useState('');
+  const [newActionDollarAmount, setNewActionDollarAmount] = useState(''); // This is now annual
 
   // State for editing action plan items
   const [editingActionId, setEditingActionId] = useState(null);
   const [editActionStep, setEditActionStep] = useState('');
   const [editActionTimeline, setEditActionTimeline] = useState('');
+  const [editActionDollarAmount, setEditActionDollarAmount] = useState(''); // This is now annual
 
 
   const prayers = [
-    "Day 1: Lord, grant me **clarity** to see my financial reality and make wise decisions. (Face Your Numbers)",
-    "Day 2: Heavenly Father, show me where I can **increase** my income to better serve your purpose. (Pray for Increase)",
-    "Day 3: God, help me to identify and **eliminate noise** in my spending, so I can focus on what truly matters. (Cut Noise, Not Life)",
-    "Day 4: I pray for discipline to **automate my obedience** in saving and giving. (Automate Your Obedience)",
-    "Day 5: Grant me wisdom, Lord, to **build my emergency fund**, creating an ark of security for my family. (Emergency Fund)",
+    "Day 1: Lord, grant me clarity to see my financial reality and make wise decisions. (Face Your Numbers)",
+    "Day 2: Heavenly Father, show me where I can increase my income to better serve your purpose. (Pray for Increase)",
+    "Day 3: God, help me to identify and eliminate noise in my spending, so I can focus on what truly matters. (Cut Noise, Not Life)",
+    "Day 4: I pray for discipline to automate my obedience in saving and giving. (Automate Your Obedience)",
+    "Day 5: Grant me wisdom, Lord, to build my emergency fund, creating an ark of security for my family. (Emergency Fund)",
     "Day 6: Father, bless my efforts to diligently track my finances, as your word instructs. (Face Your Numbers)",
-    "Day 7: May opportunities for **income growth** multiply, aligning with your divine will. (Pray for Increase)",
+    "Day 7: May opportunities for income growth multiply, aligning with your divine will. (Pray for Increase)",
     "Day 8: Help me, God, to discern between needs and wants, cutting expenses that don't serve my life. (Cut Noise, Not Life)",
-    "Day 9: I commit to consistent saving, Lord, trusting your provision as I **automate** my financial habits. (Automate Your Obedience)",
-    "Day 10: Strengthen my resolve to grow my **emergency fund**, a testament to my trust in your future provision. (Emergency Fund)",
+    "Day 9: I commit to consistent saving, Lord, trusting your provision as I automate my financial habits. (Automate Your Obedience)",
+    "Day 10: Strengthen my resolve to grow my emergency fund, a testament to my trust in your future provision. (Emergency Fund)",
     "Day 11: Lord, open my eyes to every detail of my financial state, that I may be a good steward. (Face Your Numbers)",
-    "Day 12: I pray for creative ideas and divine connections that lead to **increased prosperity**. (Pray for Increase)",
+    "Day 12: I pray for creative ideas and divine connections that lead to increased prosperity. (Pray for Increase)",
     "Day 13: Guide me, Spirit, to live a life free from unnecessary distractions and wasteful spending. (Cut Noise, Not Life)",
-    "Day 14: Thank you, Lord, for the power of **automation** in bringing order and consistency to my finances. (Automate Your Obedience)",
-    "Day 15: Protect and grow my **emergency fund**, Lord, making it a reliable source in times of need. (Emergency Fund)",
+    "Day 14: Thank you, Lord, for the power of automation in bringing order and consistency to my finances. (Automate Your Obedience)",
+    "Day 15: Protect and grow my emergency fund, Lord, making it a reliable source in times of need. (Emergency Fund)",
     "Day 16: Give me courage, Father, to confront my financial numbers with honesty and a plan. (Face Your Numbers)",
-    "Day 17: I ask for your blessing, Lord, upon my work and ventures, that they may yield abundant **increase**. (Pray for Increase)",
+    "Day 17: I ask for your blessing, Lord, upon my work and ventures, that they may yield abundant increase. (Pray for Increase)",
     "Day 18: Help me to declutter my financial life, removing anything that hinders my progress. (Cut Noise, Not Life)",
-    "Day 19: I declare peace over my finances as I intentionally **automate** my savings and giving. (Automate Your Obedience)",
-    "Day 20: May my **emergency fund** reflect your faithfulness and my commitment to financial prudence. (Emergency Fund)",
+    "Day 19: I declare peace over my finances as I intentionally automate my savings and giving. (Automate Your Obedience)",
+    "Day 20: May my emergency fund reflect your faithfulness and my commitment to financial prudence. (Emergency Fund)",
     "Day 21: Lord, grant me foresight and understanding to plan my finances with precision. (Face Your Numbers)",
-    "Day 22: Ignite within me the passion and drive to pursue new avenues of **income and growth**. (Pray for Increase)",
+    "Day 22: Ignite within me the passion and drive to pursue new avenues of income and growth. (Pray for Increase)",
     "Day 23: Thank you, God, for showing me how to live abundantly by cutting what is superfluous. (Cut Noise, Not Life)",
-    "Day 24: I rejoice in the ease and effectiveness of **automated** financial habits, a gift from your wisdom. (Automate Your Obedience)",
-    "Day 25: Let my **emergency fund** be a testimony of your peace that transcends all understanding. (Emergency Fund)",
+    "Day 24: I rejoice in the ease and effectiveness of automated financial habits, a gift from your wisdom. (Automate Your Obedience)",
+    "Day 25: Let my emergency fund be a testimony of your peace that transcends all understanding. (Emergency Fund)",
     "Day 26: Father, reveal any hidden financial burdens and empower me to address them. (Face Your Numbers)",
-    "Day 27: I pray for open doors and divine favor in my career and business for **supernatural increase**. (Pray for Increase)",
+    "Day 27: I pray for open doors and divine favor in my career and business for supernatural increase. (Pray for Increase)",
     "Day 28: Help me, Lord, to continually evaluate my spending, ensuring every dollar is aligned with my values. (Cut Noise, Not Life)",
     "Day 29: With every automated transfer, I sow seeds of financial freedom and future blessing. (Automate Your Obedience)",
-    "Day 30: Thank you, God, for the complete security and peace that comes from a fully funded **emergency fund**. (Emergency Fund)"
+    "Day 30: Thank you, God, for the complete security and peace that comes from a fully funded emergency fund. (Emergency Fund)"
   ];
 
 
   const handleAddAction = () => {
-    if (newActionStep && newActionTimeline) {
-      setActionPlanData([...actionPlanData, { id: generateId(), step: newActionStep, timeline: newActionTimeline, status: 'Planned' }]);
+    if (newActionStep && newActionTimeline && newActionDollarAmount) {
+      setActionPlanData([...actionPlanData, { id: generateId(), step: newActionStep, timeline: newActionTimeline, dollarAmount: parseFloat(newActionDollarAmount), status: 'Planned' }]);
       setNewActionStep('');
       setNewActionTimeline('');
+      setNewActionDollarAmount('');
     }
   };
 
@@ -1080,11 +1312,12 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome, prayerCalendar,
     setEditingActionId(item.id);
     setEditActionStep(item.step);
     setEditActionTimeline(item.timeline);
+    setEditActionDollarAmount(item.dollarAmount);
   };
 
   const handleSaveEditedAction = (id) => {
     setActionPlanData(actionPlanData.map(item =>
-      item.id === id ? { ...item, step: editActionStep, timeline: editActionTimeline } : item
+      item.id === id ? { ...item, step: editActionStep, timeline: editActionTimeline, dollarAmount: parseFloat(editActionDollarAmount) } : item
     ));
     setEditingActionId(null);
   };
@@ -1107,9 +1340,9 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome, prayerCalendar,
     <div className="p-6">
       <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">5. Pray for Increase + Take Action</h2>
       <p className="text-gray-600 mb-8 text-center max-w-2xl mx-auto">
-        "The blessing of the Lord brings wealth, without painful toil for it." <br/> **Proverbs 10:22**
-        You can only save as much as you earn.
-        Pair your prayers with bold action to grow your income!
+        "The blessing of the Lord brings wealth, without painful toil for it." Proverbs 10:22
+        <br />
+        You can only save as much as you earn. Pair your prayers with bold action to grow your income!
       </p>
 
       <div className="bg-teal-50 p-6 rounded-lg shadow-md border-t-4 border-teal-600 mb-8">
@@ -1129,6 +1362,13 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome, prayerCalendar,
             onChange={(e) => setNewActionTimeline(e.target.value)}
             className="p-3 border border-gray-300 rounded-md flex-grow focus:ring-teal-500 focus:border-teal-500"
           />
+          <input
+            type="number"
+            placeholder="Annual Dollar Amount ($)"
+            value={newActionDollarAmount}
+            onChange={(e) => setNewActionDollarAmount(e.target.value)}
+            className="p-3 border border-gray-300 rounded-md w-full md:w-auto focus:ring-teal-500 focus:border-teal-500" /* Changed to md:w-auto */
+          />
           <button
             onClick={handleAddAction}
             className="px-6 py-3 bg-teal-600 text-white font-semibold rounded-md hover:bg-teal-700 transition-all duration-200 shadow-md"
@@ -1137,21 +1377,24 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome, prayerCalendar,
           </button>
         </div>
 
-        <div className="max-h-60 overflow-y-auto mb-4 border border-teal-200 rounded-md">
-            {actionPlanData.length === 0 ? (
-              <p className="text-gray-500 text-center p-4">No action steps planned yet.</p>
-            ) : (
-              <table className="min-w-full bg-white text-sm">
-                <thead className="sticky top-0 bg-teal-100">
-                  <tr>
-                    <th className="py-2 px-4 text-left text-teal-800">Action Step</th>
-                    <th className="py-2 px-4 text-left text-teal-800">Timeline</th>
-                    <th className="py-2 px-4 text-left text-teal-800">Status</th>
-                    <th className="py-2 px-4 text-left text-teal-800">Actions</th>
+        <div className="max-h-60 overflow-y-auto overflow-x-auto mb-4 border border-teal-200 rounded-md">
+            <table className="min-w-full bg-white text-sm">
+              <thead className="sticky top-0 bg-teal-100">
+                <tr>
+                  <th className="py-2 px-4 text-left text-teal-800">Action Step</th>
+                  <th className="py-2 px-4 text-left text-teal-800">Timeline</th>
+                  <th className="py-2 px-4 text-left text-teal-800">Annual Amount</th> {/* Updated column header */}
+                  <th className="py-2 px-4 text-left text-teal-800">Status</th>
+                  <th className="py-2 px-4 text-left text-teal-800">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {actionPlanData.length === 0 ? (
+                  <tr className="border-b border-teal-100 last:border-0">
+                    <td colSpan="5" className="text-gray-500 text-center p-4">No action steps planned yet.</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {actionPlanData.map((item) => (
+                ) : (
+                  actionPlanData.map((item) => (
                     <tr key={item.id} className="border-b border-teal-100 last:border-0">
                       {editingActionId === item.id ? (
                         <>
@@ -1172,6 +1415,14 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome, prayerCalendar,
                             />
                           </td>
                           <td className="py-2 px-4">
+                            <input
+                              type="number"
+                              value={editActionDollarAmount}
+                              onChange={(e) => setEditActionDollarAmount(e.target.value)}
+                              className="p-1 border border-gray-300 rounded-md w-full"
+                            />
+                          </td>
+                          <td className="py-2 px-4">
                             <select
                               value={item.status} // Still showing current status for context
                               onChange={(e) => toggleActionStatus(item.id)} // Allow changing status during edit
@@ -1181,29 +1432,30 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome, prayerCalendar,
                               <option value="Completed">Completed</option>
                             </select>
                           </td>
-                          <td className="py-2 px-4 flex gap-2">
-                            <button onClick={() => handleSaveEditedAction(item.id)} className="text-green-600 hover:text-green-800 text-sm">Save</button>
-                            <button onClick={handleCancelEditAction} className="text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                          <td className="py-2 px-4 flex gap-1 items-center">
+                            <button onClick={() => handleSaveEditedAction(item.id)} className="text-green-600 hover:text-green-800 text-xs py-1 px-2 rounded">Save</button>
+                            <button onClick={handleCancelEditAction} className="text-gray-600 hover:text-gray-800 text-xs py-1 px-2 rounded">Cancel</button>
                           </td>
                         </>
                       ) : (
                         <>
                           <td className="py-2 px-4">{item.step}</td>
                           <td className="py-2 px-4">{item.timeline}</td>
+                          <td className="py-2 px-4">{formatCurrency(item.dollarAmount)}</td> {/* Displays as annual */}
                           <td className={`py-2 px-4 font-semibold ${item.status === 'Completed' ? 'text-green-600' : 'text-blue-600'}`}>
                             {item.status}
                           </td>
-                          <td className="py-2 px-4 flex gap-2">
-                            <button onClick={() => handleEditAction(item)} className="text-blue-600 hover:text-blue-800 text-sm">Edit</button>
-                            <button onClick={() => handleRemoveAction(item.id)} className="text-red-600 hover:text-red-800 text-sm">Remove</button>
+                          <td className="py-2 px-4 flex gap-1 items-center">
+                            <button onClick={() => handleEditAction(item)} className="text-blue-600 hover:text-blue-800 text-xs py-1 px-2 rounded">Edit</button>
+                            <button onClick={() => handleRemoveAction(item.id)} className="text-red-600 hover:text-red-800 text-xs py-1 px-2 rounded">Remove</button>
                           </td>
                         </>
                       )}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  ))
+                )}
+              </tbody>
+            </table>
         </div>
       </div>
 
@@ -1243,6 +1495,43 @@ const Step5 = ({ actionPlanData, setActionPlanData, totalIncome, prayerCalendar,
 };
 
 
+// --- Sheet: Support ---
+const Support = () => {
+  return (
+    <div className="p-6 text-center">
+      <h2 className="text-3xl font-extrabold text-gray-800 mb-6">Need a Helping Hand?</h2>
+      <p className="text-gray-600 mb-8 max-w-2xl mx-auto">
+        "Plans fail for lack of counsel, but with many advisers they succeed." Proverbs 15:22
+        <br />
+        Sometimes, navigating your financial journey requires a fresh perspective and wise counsel.
+        Don't hesitate to seek guidance when you need it.
+      </p>
+
+      <div className="bg-blue-50 p-6 rounded-lg shadow-md border-t-4 border-blue-600 mb-8 max-w-xl mx-auto">
+        <h3 className="text-2xl font-bold text-blue-800 mb-4">Book Your Free Money Clarity Call!</h3>
+        <p className="text-gray-700 mb-6">
+          Ready to get clear on your finances and accelerate your path to wealth?
+          Book a complimentary 30-minute Money Clarity Call with a dedicated Money Coach today.
+        </p>
+        <a
+          href="https://shanitene.com/clarity"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 text-white font-bold rounded-full text-lg shadow-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105"
+        >
+          Book Your Free Call Now
+          <ArrowRightCircle size={20} className="ml-3" />
+        </a>
+        <p className="text-sm text-gray-500 mt-6">
+          Prefer to connect via email? Reach out to us at:{' '}
+          <a href="mailto:hello@mycoachline.com" className="text-blue-600 hover:underline">hello@mycoachline.com</a>
+        </p>
+      </div>
+    </div>
+  );
+};
+
+
 // --- Main App Component ---
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -1268,10 +1557,21 @@ const App = () => {
   const [savingsData, setSavingsData] = useState(() => {
     try {
       const storedSavings = localStorage.getItem('eternalWealth_savingsData');
-      return storedSavings ? JSON.parse(storedSavings) : { emergencyFund: 0, emergencyFundGoal: 1000 };
+      // Updated default structure to include initialBalance and monthlySavingGoal
+      return storedSavings ? JSON.parse(storedSavings) : { initialBalance: 0, emergencyFundGoal: 1000, monthlySavingGoal: 0 };
     } catch (e) {
       console.error("Failed to parse savings data from localStorage:", e);
-      return { emergencyFund: 0, emergencyFundGoal: 1000 };
+      return { initialBalance: 0, emergencyFundGoal: 1000, monthlySavingGoal: 0 };
+    }
+  });
+  const [emergencyFundContributions, setEmergencyFundContributions] = useState(() => {
+    try {
+      const storedContributions = localStorage.getItem('eternalWealth_emergencyFundContributions');
+      return storedContributions ? JSON.parse(storedContributions) : [];
+    }
+  catch (e) {
+      console.error("Failed to parse emergency fund contributions from localStorage:", e);
+      return [];
     }
   });
   const [automationData, setAutomationData] = useState(() => {
@@ -1286,7 +1586,9 @@ const App = () => {
   const [noiseLifeData, setNoiseLifeData] = useState(() => {
     try {
       const storedNoiseLife = localStorage.getItem('eternalWealth_noiseLifeData');
-      return storedNoiseLife ? JSON.parse(storedNoiseLife) : [];
+      // Ensure dollarAmount is parsed
+      const parsedData = storedNoiseLife ? JSON.parse(storedNoiseLife) : [];
+      return parsedData.map(item => ({ ...item, dollarAmount: parseFloat(item.dollarAmount || 0) }));
     } catch (e) {
       console.error("Failed to parse noise/life data from localStorage:", e);
       return [];
@@ -1295,7 +1597,9 @@ const App = () => {
   const [actionPlanData, setActionPlanData] = useState(() => {
     try {
       const storedActionPlan = localStorage.getItem('eternalWealth_actionPlanData');
-      return storedActionPlan ? JSON.parse(storedActionPlan) : [];
+      // Ensure dollarAmount is parsed
+      const parsedData = storedActionPlan ? JSON.parse(storedActionPlan) : [];
+      return parsedData.map(item => ({ ...item, dollarAmount: parseFloat(item.dollarAmount || 0) }));
     } catch (e) {
       console.error("Failed to parse action plan data from localStorage:", e);
       return [];
@@ -1328,7 +1632,7 @@ const App = () => {
       const storedStrategies = localStorage.getItem('eternalWealth_automationStrategies');
       const parsedStrategies = storedStrategies ? JSON.parse(storedStrategies) : [];
       return DEFAULT_AUTOMATION_STRATEGIES.map(defaultStrategy => {
-        const stored = parsedStrategies.find(ss => ss.id === defaultStrategy.id);
+        const stored = parsedStrategies.find(ss => ss.id === defaultStrategy.id); 
         return { ...defaultStrategy, checked: stored ? stored.checked : false };
       });
     } catch (e) {
@@ -1370,6 +1674,14 @@ const App = () => {
       console.error("Failed to save savings data to localStorage:", e);
     }
   }, [savingsData]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('eternalWealth_emergencyFundContributions', JSON.stringify(emergencyFundContributions));
+    } catch (e) {
+      console.error("Failed to save emergency fund contributions to localStorage:", e);
+    }
+  }, [emergencyFundContributions]);
 
   useEffect(() => {
     try {
@@ -1446,16 +1758,21 @@ const App = () => {
               setExpenseData(newValue || []);
               break;
             case 'eternalWealth_savingsData':
-              setSavingsData(newValue || { emergencyFund: 0, emergencyFundGoal: 1000 });
+              setSavingsData(newValue || { initialBalance: 0, emergencyFundGoal: 1000, monthlySavingGoal: 0 });
+              break;
+            case 'eternalWealth_emergencyFundContributions':
+              setEmergencyFundContributions(newValue || []);
               break;
             case 'eternalWealth_automationData':
               setAutomationData(newValue || []);
               break;
             case 'eternalWealth_noiseLifeData':
-              setNoiseLifeData(newValue || []);
+              // Ensure dollarAmount is parsed for synced data
+              setNoiseLifeData((newValue || []).map(item => ({ ...item, dollarAmount: parseFloat(item.dollarAmount || 0) })));
               break;
             case 'eternalWealth_actionPlanData':
-              setActionPlanData(newValue || []);
+              // Ensure dollarAmount is parsed for synced data
+              setActionPlanData((newValue || []).map(item => ({ ...item, dollarAmount: parseFloat(item.dollarAmount || 0) })));
               break;
             case 'eternalWealth_savingsMethods':
               // For savingsMethods, we need to map and preserve default items
@@ -1500,11 +1817,13 @@ const App = () => {
   }, []); // Empty dependency array means this effect runs once on mount and cleans up on unmount
 
 
-  // Calculate total income for passing to Step 5
+  // Calculate total income and total expenses in the main App component
   const totalIncome = incomeData.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+  const totalExpenses = expenseData.reduce((sum, item) => sum + parseFloat(item.amount), 0);
+  const netSavings = totalIncome - totalExpenses; // Calculate netSavings here
 
   return (
-    <div className="min-h-screen bg-gray-100 font-sans text-gray-900 antialiased p-4">
+    <div className="min-h-screen bg-gray-100 font-sans text-gray-900 antialiased p-4 relative pb-10"> {/* Added pb-10 for footer space */}
       <div className="max-w-7xl mx-auto bg-gray-50 rounded-xl shadow-2xl overflow-hidden">
         <Header setActiveTab={setActiveTab} />
         <main className="p-0"> {/* No padding here as inner components have their own */}
@@ -1513,6 +1832,9 @@ const App = () => {
               incomeData={incomeData}
               expenseData={expenseData}
               savingsData={savingsData}
+              noiseLifeData={noiseLifeData} // Pass for dashboard forecast
+              actionPlanData={actionPlanData} // Pass for dashboard forecast
+              emergencyFundContributions={emergencyFundContributions} // Pass for dashboard to calculate total fund
             />
           )}
           {activeTab === 'step1' && (
@@ -1527,18 +1849,21 @@ const App = () => {
             <Step2
               savingsData={savingsData}
               setSavingsData={setSavingsData}
-              savingsMethods={savingsMethods} // Pass to Step2
-              setSavingsMethods={setSavingsMethods} // Pass to Step2
+              savingsMethods={savingsMethods}
+              setSavingsMethods={setSavingsMethods}
+              emergencyFundContributions={emergencyFundContributions}
+              setEmergencyFundContributions={setEmergencyFundContributions}
+              netSavings={netSavings} // Pass netSavings to Step2
             />
           )}
           {activeTab === 'step3' && (
             <Step3
               automationData={automationData}
               setAutomationData={setAutomationData}
-              challengeProgress={challengeProgress} // Pass to Step3
-              setChallengeProgress={setChallengeProgress} // Pass to Step3
-              automationStrategies={automationStrategies} // Pass to Step3
-              setAutomationStrategies={setAutomationStrategies} // Pass to Step3
+              challengeProgress={challengeProgress}
+              setChallengeProgress={setChallengeProgress}
+              automationStrategies={automationStrategies}
+              setAutomationStrategies={setAutomationStrategies}
             />
           )}
           {activeTab === 'step4' && (
@@ -1551,13 +1876,19 @@ const App = () => {
             <Step5
               actionPlanData={actionPlanData}
               setActionPlanData={setActionPlanData}
-              totalIncome={totalIncome} // Pass total income to Step5
-              prayerCalendar={prayerCalendar} // Pass to Step5
-              setPrayerCalendar={setPrayerCalendar} // Pass to Step5
+              totalIncome={totalIncome}
+              prayerCalendar={prayerCalendar}
+              setPrayerCalendar={setPrayerCalendar}
             />
+          )}
+          {activeTab === 'support' && (
+            <Support />
           )}
         </main>
       </div>
+      <footer className="absolute bottom-0 right-0 p-4 text-gray-500 text-sm">
+        © Coachline 2025
+      </footer>
     </div>
   );
 };
