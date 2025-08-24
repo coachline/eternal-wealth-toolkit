@@ -679,7 +679,7 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
     <div className="p-6">
       <h2 className="text-3xl font-extrabold text-gray-800 mb-6 text-center">4. Cut Noise, Not Life</h2>
       <p className="text-gray-600 mb-8 text-center max-w-2xl mx-auto">
-        "God wants you to enjoy life, just not waste it." <br/> **Ecclesiastes 3:13**
+        "Every person should eat, drink, and find satisfaction in the good of their labor because it is a gift from God" <br/> **Ecclesiastes 3:13**
         Saving isn't punishment; it's alignment.
         Cut the noise that doesn’t add value, but keep what truly matters.
       </p>
@@ -760,7 +760,7 @@ const Step4 = ({ noiseLifeData, setNoiseLifeData }) => {
 
         <div className="mt-10 p-4 bg-orange-100 rounded-md text-orange-800 flex items-center gap-3">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-leaf"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.4 15 2c-2.2 2.8-4.7 5-8 5a6 6 0 0 0-3 4c0 1 0 2 1 3a6 6 0 0 0 3 2l.2.2c-.3.2-.6.5-.8.8l-1.5 1.5c-.7.7-1.7 1-2.7 1C3 21 2 20.4 2 19c0-1 0-2 2-4h3l-1-1c-1.2-1.2-2-2.9-2-5a7 7 0 0 1 12-6.2c.2-.2.6-.4 1-.2 1.4.6 2.5 2.1 3 4.4 0 1 .4 2.6-.4 4.8-.7 2.2-2.3 4.3-5 5.7"></path></svg> {/* Leaf/Plant SVG for Stewardship */}
-          <p className="font-semibold">"That each of them may eat and drink, and find satisfaction in all their toil." This is about stewardship, not scarcity.</p>
+          <p className="font-semibold">God wants you to enjoy life, just not waste it.This is about stewardship, not scarcity.</p>
         </div>
         <p className="text-center italic text-gray-700 mt-8">Declare it: "I'm cutting noise, not life!"</p>
       </div>
